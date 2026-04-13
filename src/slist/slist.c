@@ -8,34 +8,34 @@
 
 /* Wewnętrzna struktura węzła */
 typedef struct slist_node {
-    void* data;
-    struct slist_node* next;
+    void *data;
+    struct slist_node *next;
 } slist_node_t;
 
 /* Wewnętrzna struktura listy */
 struct slist {
-    slist_node_t* head;
+    slist_node_t *head;
     size_t size;
     object_destructor_function_t destructor;
 
     /* Lista węzłów poddanych recyklingowi (free list) */
-    slist_node_t* recycled_nodes;
+    slist_node_t *recycled_nodes;
 };
 
 /* --- Funkcje pomocnicze do recyklingu węzłów --- */
 
-static slist_node_t* allocate_node(slist_t* list) {
+static slist_node_t *allocate_node(slist_t *list) {
     if (list->recycled_nodes != NULL) {
         /* Pobierz węzeł z listy recyklingu */
-        slist_node_t* node = list->recycled_nodes;
+        slist_node_t *node = list->recycled_nodes;
         list->recycled_nodes = node->next;
         return node;
     }
     /* Brak węzłów do recyklingu - alokuj nowy */
-    return (slist_node_t*)malloc(sizeof(slist_node_t));
+    return (slist_node_t *) malloc(sizeof(slist_node_t));
 }
 
-static void free_node(slist_t* list, slist_node_t* node) {
+static void free_node(slist_t *list, slist_node_t *node) {
     /* Odkłada węzeł na listę recyklingu zamiast robić free() */
     node->next = list->recycled_nodes;
     list->recycled_nodes = node;
@@ -43,8 +43,8 @@ static void free_node(slist_t* list, slist_node_t* node) {
 
 /* --- Implementacja API --- */
 
-slist_t* slist_create(object_destructor_function_t dtor) {
-    slist_t* list = (slist_t*)malloc(sizeof(slist_t));
+slist_t *slist_create(object_destructor_function_t dtor) {
+    slist_t *list = (slist_t *) malloc(sizeof(slist_t));
     if (!list) {
         errno = ENOMEM;
         return NULL;
@@ -58,16 +58,16 @@ slist_t* slist_create(object_destructor_function_t dtor) {
     return list;
 }
 
-int slist_destroy(slist_t* list) {
+int slist_destroy(slist_t *list) {
     if (!list) {
         errno = EINVAL;
         return SLIST_ERR;
     }
 
     /* 1. Niszczenie aktywnych węzłów i wywoływanie destruktora */
-    slist_node_t* current = list->head;
+    slist_node_t *current = list->head;
     while (current) {
-        slist_node_t* next = current->next;
+        slist_node_t *next = current->next;
         if (list->destructor && current->data) {
             list->destructor(current->data);
         }
@@ -78,7 +78,7 @@ int slist_destroy(slist_t* list) {
     /* 2. Zwalnianie węzłów z puli recyklingu */
     current = list->recycled_nodes;
     while (current) {
-        slist_node_t* next = current->next;
+        slist_node_t *next = current->next;
         free(current); /* Zwolnienie ostateczne */
         current = next;
     }
@@ -89,13 +89,13 @@ int slist_destroy(slist_t* list) {
     return SLIST_OK;
 }
 
-int slist_add(slist_t* list, void* data) {
+int slist_add(slist_t *list, void *data) {
     if (!list) {
         errno = EINVAL;
         return SLIST_ERR;
     }
 
-    slist_node_t* new_node = allocate_node(list);
+    slist_node_t *new_node = allocate_node(list);
     if (!new_node) {
         errno = ENOMEM;
         return SLIST_ERR;
@@ -109,17 +109,17 @@ int slist_add(slist_t* list, void* data) {
     return SLIST_OK;
 }
 
-int slist_remove(slist_t* list, void* data) {
+int slist_remove(slist_t *list, void *data) {
     if (!list) {
         errno = EINVAL;
         return SLIST_ERR;
     }
 
-    slist_node_t** current_ptr = &list->head;
+    slist_node_t **current_ptr = &list->head;
 
     while (*current_ptr) {
         if ((*current_ptr)->data == data) {
-            slist_node_t* node_to_remove = *current_ptr;
+            slist_node_t *node_to_remove = *current_ptr;
 
             /* Przepięcie wskaźników */
             *current_ptr = node_to_remove->next;
@@ -142,7 +142,7 @@ int slist_remove(slist_t* list, void* data) {
     return SLIST_ERR;
 }
 
-int slist_size(slist_t* list, size_t* out_size) {
+int slist_size(slist_t *list, size_t *out_size) {
     if (!list || !out_size) {
         errno = EINVAL;
         return SLIST_ERR;
@@ -152,7 +152,7 @@ int slist_size(slist_t* list, size_t* out_size) {
     return SLIST_OK;
 }
 
-int slist_is_empty(slist_t* list, int* out_is_empty) {
+int slist_is_empty(slist_t *list, int *out_is_empty) {
     if (!list || !out_is_empty) {
         errno = EINVAL;
         return SLIST_ERR;
@@ -162,13 +162,13 @@ int slist_is_empty(slist_t* list, int* out_is_empty) {
     return SLIST_OK;
 }
 
-int slist_foreach(slist_t* list, object_job_function_t job, void* argstruct) {
+int slist_foreach(slist_t *list, object_job_function_t job, void *argstruct) {
     if (!list || !job) {
         errno = EINVAL;
         return SLIST_ERR;
     }
 
-    slist_node_t* current = list->head;
+    slist_node_t *current = list->head;
     while (current) {
         /* Jeśli job() zwróci wartość inną niż 0, można przerwać iterację */
         if (job(current->data, argstruct) != 0) {

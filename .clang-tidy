@@ -1,0 +1,54 @@
+BasedOnStyle: GNU
+
+# Braces: always `if () {`, `for () {`, etc.
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+
+# Single-line functions: wrap to one line and inline
+AllowShortFunctionsOnASingleLine: Inline
+AlwaysBreakAfterDefinitionReturnType: None
+
+# Two blank lines between top-level functions
+MaxEmptyLinesToKeep: 2
+SeparateDefinitionBlocks: Always
+PenaltyBreakBeforeFirstCallParameter: 1
+
+# Align consecutive assignments, declarations, macros, etc.
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignConsecutiveBitFields: true
+
+# Indentation & spacing (GNU‑ish)
+IndentWidth: 2
+TabWidth: 8
+UseTab: Always
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: true
+SpaceBeforeAssignmentOperators: true
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+
+# Keep long lines flowing but don’t be too aggressive
+ColumnLimit: 80
+BreakBeforeBinaryOperators: None
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Keep GNU‑style spacing around pointers/references
+PointerAlignment: Left
+
+# Preprocessor and macros
+AlignAfterOpenBracket: Align
+AlignTrailingComments: true
+
+# General
+DerivePointerAlignment: false

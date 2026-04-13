@@ -12,14 +12,17 @@
 #define QUEUE_ERR (-1)
 
 /* Typy wskaźników na funkcje */
-typedef void (*object_destructor_function_t)(void*);
-typedef int (*object_job_function_t)(void* obj, void* argstruct);
+typedef void (*object_destructor_function_t)(void *);
+
+typedef int (*object_job_function_t)(void *obj, void *argstruct);
 
 /* Opaque pointer - ukryta struktura kolejki */
 typedef struct queue queue_t;
 
 #ifdef __cplusplus
 extern "C" {
+
+
 #endif
 
 /**
@@ -27,14 +30,14 @@ extern "C" {
  * @param dtor Funkcja czyszcząca elementy kolejki w przypadku jej zniszczenia. Może być NULL.
  * @return Wskaźnik na nową kolejkę lub NULL w przypadku błędu (ustawia errno = ENOMEM).
  */
-queue_t* queue_create(object_destructor_function_t dtor);
+queue_t *queue_create(object_destructor_function_t dtor);
 
 /**
  * @brief Niszczy kolejkę, wywołując destruktory dla elementów pozostających w kolejce i zwalniając pamięć.
  * @param q Wskaźnik na kolejkę.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno).
  */
-int queue_destroy(queue_t* q);
+int queue_destroy(queue_t *q);
 
 /**
  * @brief Dodaje nowy element na koniec kolejki (Enqueue).
@@ -42,7 +45,7 @@ int queue_destroy(queue_t* q);
  * @param data Wskaźnik na dane.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno).
  */
-int queue_enqueue(queue_t* q, void* data);
+int queue_enqueue(queue_t *q, void *data);
 
 /**
  * @brief Zdejmuje element z początku kolejki (Dequeue).
@@ -51,7 +54,7 @@ int queue_enqueue(queue_t* q, void* data);
  * Jeśli podano NULL, dane są niszczone za pomocą destruktora.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno = ENOENT jeśli kolejka jest pusta).
  */
-int queue_dequeue(queue_t* q, void** out_data);
+int queue_dequeue(queue_t *q, void **out_data);
 
 /**
  * @brief Zwraca rozmiar kolejki poprzez parametr wyjściowy.
@@ -59,7 +62,7 @@ int queue_dequeue(queue_t* q, void** out_data);
  * @param out_size Wskaźnik, pod którym zapisany zostanie rozmiar.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno).
  */
-int queue_size(queue_t* q, size_t* out_size);
+int queue_size(queue_t *q, size_t *out_size);
 
 /**
  * @brief Sprawdza, czy kolejka jest pusta poprzez parametr wyjściowy.
@@ -67,7 +70,7 @@ int queue_size(queue_t* q, size_t* out_size);
  * @param out_is_empty 1 jeśli pusta, 0 jeśli nie.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno).
  */
-int queue_is_empty(queue_t* q, int* out_is_empty);
+int queue_is_empty(queue_t *q, int *out_is_empty);
 
 /**
  * @brief Iteruje po wszystkich elementach kolejki (od początku do końca).
@@ -76,7 +79,7 @@ int queue_is_empty(queue_t* q, int* out_is_empty);
  * @param argstruct Dodatkowy argument przekazywany do funkcji job.
  * @return QUEUE_OK lub QUEUE_ERR (ustawia errno).
  */
-int queue_foreach(queue_t* q, object_job_function_t job, void* argstruct);
+int queue_foreach(queue_t *q, object_job_function_t job, void *argstruct);
 
 #ifdef __cplusplus
 }

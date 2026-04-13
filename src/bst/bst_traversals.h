@@ -7,6 +7,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+
+
 #endif
 
 /* Enum for traversal orders */
@@ -16,11 +18,11 @@ typedef enum {
     BST_TRAVERSAL_LRN, /* Post-order: Left, Right, Node */
     BST_TRAVERSAL_NRL, /* Reverse Pre-order: Node, Right, Left */
     BST_TRAVERSAL_RNL, /* Reverse In-order: Right, Node, Left */
-    BST_TRAVERSAL_RLN  /* Reverse Post-order: Right, Left, Node */
+    BST_TRAVERSAL_RLN /* Reverse Post-order: Right, Left, Node */
 } bst_traversal_t;
 
 /* Function pointer type for operations applied to each node */
-typedef int (*object_job_function_t)(void* obj, void* argstruct);
+typedef int (*object_job_function_t)(void *obj, void *argstruct);
 
 /* Forward declaration of the opaque BST type */
 typedef struct bst bst_t;
@@ -33,7 +35,7 @@ typedef struct bst bst_t;
  * @param argstruct Additional argument passed to the job function.
  * @return BST_OK or BST_ERR (sets errno).
  */
-int bst_apply(bst_t* tree, bst_traversal_t order, object_job_function_t job, void* argstruct);
+int bst_apply(bst_t *tree, bst_traversal_t order, object_job_function_t job, void *argstruct);
 
 #ifdef __cplusplus
 }
