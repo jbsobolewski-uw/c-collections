@@ -1,7 +1,7 @@
 set(CMAKE_VERBOSE_MAKEFILE ON)
 cmake_minimum_required(VERSION 3.12)
 
-project(plant LANGUAGES C)
+project(C-COLLECTIONS LANGUAGES C)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_CLANG_TIDY "clang-tidy")
