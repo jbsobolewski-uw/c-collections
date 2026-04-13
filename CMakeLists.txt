@@ -10,6 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(src/slist)
 add_subdirectory(src/queue)
 add_subdirectory(src/stack)
+add_subdirectory(src/bst)
 
 add_compile_options(
         -Wall
