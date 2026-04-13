@@ -1,4 +1,4 @@
-add_library(queue
+add_library(queuelib
         queue.c
         queue.h
 )

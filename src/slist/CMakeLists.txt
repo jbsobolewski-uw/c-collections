@@ -1,4 +1,4 @@
-add_library(slib
+add_library(slistlib
         slist.c
         slist.h
 )
