@@ -2,8 +2,8 @@
 // Created by jakub on 4/13/26.
 //
 
-#ifndef PLANT_STACK_H
-#define PLANT_STACK_H
+#ifndef C_COLLECTIONS_STACK_H
+#define C_COLLECTIONS_STACK_H
 
 #include <stddef.h>
 
@@ -82,4 +82,4 @@ int stack_foreach(stack_t* stack, object_job_function_t job, void* argstruct);
 }
 #endif
 
-#endif //PLANT_STACK_H
+#endif //C_COLLECTIONS_STACK_H
