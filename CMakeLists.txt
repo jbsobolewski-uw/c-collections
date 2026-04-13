@@ -4,14 +4,11 @@ cmake_minimum_required(VERSION 3.12)
 project(C-COLLECTIONS LANGUAGES C)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_CLANG_TIDY ".clang-tidy")
 
 include_directories(${PROJECT_SOURCE_DIR})
-add_subdirectory(src/slist)
-add_subdirectory(src/queue)
-add_subdirectory(src/stack)
-add_subdirectory(src/bst)
+add_subdirectory(src)
 
+set(CMAKE_C_CLANG_TIDY "${PROJECT_SOURCE_DIR}/.clang-tidy")
 add_compile_options(
         -pedantic
         -Wall
