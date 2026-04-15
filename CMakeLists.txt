@@ -30,8 +30,8 @@ add_compile_options(
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-march=native -O3)
-endif()
+endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-O1 -g)
-endif()
+endif ()

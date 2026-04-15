@@ -22,7 +22,14 @@
 /* Function pointer types */
 typedef void (*object_destructor_function_t)(void *);
 
+/* Object comparator: return values mimic string.h/strcmp */
 typedef int (*object_comparator_function_t)(void *obj1, void *obj2);
+
+// Compares two signed long integers
+int bst_cmp_signed_int(void *a, void *b);
+
+// Compares two unsigned long integers
+int bst_cmp_unsigned_int(void *a, void *b);
 
 /* Opaque pointer definitions */
 typedef struct bst_node bst_node_t;
@@ -32,11 +39,13 @@ typedef struct bst_node bst_node_t;
 extern "C" {
 
 
+
 #endif
 
 /**
  * @brief Creates a new BST.
  * @param cmp Comparator function returning BST_LE, BST_EQ, or BST_GR.
+ *      Defaults to bst_cmp_signed_int if NULL.
  * @param dtor Destructor for freeing objects. Can be NULL.
  * @return Pointer to new BST, or NULL on error.
  */
