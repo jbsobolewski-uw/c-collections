@@ -10,4 +10,4 @@
 #include "slist/slist.h"
 #include "stack/stack.h"
 
-#endif //C_COLLECTIONS_COLLECTIONS_H
+#endif // C_COLLECTIONS_COLLECTIONS_H

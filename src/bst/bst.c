@@ -35,20 +35,35 @@ static void free_node(bst_t *tree, bst_node_t *node) {
     tree->recycled_nodes = node;
 }
 
+inline int bst_cmp_signed_int(void *a, void *b) {
+    const signed long int x = *(const signed long int *) a;
+    const signed long int y = *(const signed long int *) b;
+
+    if (x < y) return -1;
+    if (x > y) return 1;
+    return BST_EQ;
+}
+
+inline int bst_cmp_unsigned_int(void *a, void *b) {
+    const unsigned long int x = *(const unsigned long int *) a;
+    const unsigned long int y = *(const unsigned long int *) b;
+
+    if (x < y) return -1;
+    if (x > y) return 1;
+    return BST_EQ;
+}
+
 /* --- API Implementation --- */
 bst_t *bst_create(object_comparator_function_t cmp, object_destructor_function_t dtor) {
-    if (!cmp) {
-        errno = EINVAL;
-        return NULL;
-    }
     bst_t *tree = (bst_t *) malloc(sizeof(bst_t));
     if (!tree) {
         errno = ENOMEM;
         return NULL;
     }
+
     tree->root = NULL;
     tree->size = 0;
-    tree->cmp = cmp;
+    tree->cmp = cmp ? cmp : bst_cmp_signed_int;
     tree->destructor = dtor;
     tree->recycled_nodes = NULL;
     return tree;
@@ -85,7 +100,8 @@ int bst_insert(bst_t *tree, void *data) {
     bst_node_t **curr = &tree->root;
     while (*curr) {
         int res = tree->cmp(data, (*curr)->data);
-        if (res == BST_LE || res == BST_LEQ) {
+        /* Duplikaty (<= BST_EQ) trafiają na lewą gałąź */
+        if (res <= BST_EQ) {
             curr = &(*curr)->left;
         } else {
             curr = &(*curr)->right;
@@ -107,12 +123,14 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
     if (!root) return NULL;
 
     int res = tree->cmp(data, root->data);
-    if (res == BST_LE || res == BST_LEQ) {
+
+    /* Czysta logika nawigacji za pomocą konwencji standardowego C */
+    if (res < BST_EQ) {
         root->left = remove_recursive(tree, root->left, data, removed);
-    } else if (res == BST_GR || res == BST_GREQ) {
+    } else if (res > BST_EQ) {
         root->right = remove_recursive(tree, root->right, data, removed);
     } else {
-        /* BST_EQ */
+        /* Węzeł znaleziony (res == BST_EQ) */
         *removed = 1;
         if (!root->left) {
             bst_node_t *temp = root->right;
@@ -126,18 +144,18 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
             return temp;
         }
 
-        /* Node with 2 children: Find successor */
+        /* Węzeł z dwójką dzieci: Znajdź następnika (najmniejszy w prawym poddrzewie) */
         bst_node_t *temp = root->right;
         while (temp && temp->left) temp = temp->left;
 
-        /* Swap data, destroying original data first */
+        /* Podmiana danych, najpierw niszczymy stare, by nie zgubić pamięci */
         if (tree->destructor) tree->destructor(root->data);
-        root->data = temp->data;
+        root->data = temp ? temp->data : NULL;
 
-        /* Remove successor. We disable dtor temporarily so successor's data isn't destroyed twice */
+        /* Usunięcie następnika. Wyłączamy tymczasowo destruktor, żeby nie zniszczyć danych, które właśnie skopiowaliśmy */
         object_destructor_function_t temp_dtor = tree->destructor;
         tree->destructor = NULL;
-        root->right = remove_recursive(tree, root->right, temp->data, removed);
+        root->right = remove_recursive(tree, root->right, temp ? temp->data : NULL, removed);
         tree->destructor = temp_dtor;
     }
     return root;
@@ -161,7 +179,8 @@ int bst_search(bst_t *tree, void *data, void **out_data) {
             *out_data = curr->data;
             return BST_OK;
         }
-        curr = (res == BST_LE || res == BST_LEQ) ? curr->left : curr->right;
+        /* Mniejsze na lewo, większe na prawo */
+        curr = (res < BST_EQ) ? curr->left : curr->right;
     }
     return (errno = ENOENT, BST_ERR);
 }

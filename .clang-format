@@ -1,0 +1,57 @@
+BasedOnStyle: GNU
+BreakBeforeBraces: Attach
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Inline
+AlwaysBreakAfterDefinitionReturnType: None
+
+# Spacing between function declarations
+SpaceBeforeParens: Never
+SpaceAfterCStyleCast: true
+
+# Single line functions inline
+BinPackArguments: false
+BinPackParameters: false
+
+# Braceless ifs/loops with single statements
+BraceWrapping:
+  AfterControlStatement: false
+
+# Two blank lines between functions
+MaxEmptyLinesToKeep: 2
+SeparateDefinitionBlocks: Always
+
+# Align consecutive
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignConsecutiveBitFields: true
+
+# Indentation & spacing
+IndentWidth: 2
+TabWidth: 8
+UseTab: Always
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+PointerAlignment: Left
+DerivePointerAlignment: false
+SpaceAfterLogicalNot: true
+SpaceBeforeAssignmentOperators: true
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+
+# Line breaking
+ColumnLimit: 80
+PenaltyBreakBeforeFirstCallParameter: 1
+BreakBeforeBinaryOperators: None
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Preprocessor
+AlignAfterOpenBracket: true
+AlignTrailingComments: true
