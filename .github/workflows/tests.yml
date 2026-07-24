@@ -1,0 +1,33 @@
+name: tests
+
+# Deliberately no `concurrency` block: every triggered run executes to
+# completion. Do not add one with cancel-in-progress - runs must never
+# cancel each other.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run test suite (ctest)
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Run test suite (python orchestrator)
+        if: matrix.build_type == 'Debug'
+        run: python3 test/run_tests.py --build-dir build
