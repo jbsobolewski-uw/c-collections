@@ -7,6 +7,8 @@
 
 #include "bst/bst.h"
 #include "bst/bst_traversals.h"
+#include "hashmap/hashmap.h"
+#include "id_manager/id_manager.h"
 #include "list/list.h"
 #include "queue/queue.h"
 #include "stack/stack.h"

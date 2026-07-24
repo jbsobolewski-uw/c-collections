@@ -164,10 +164,18 @@ static int ownership(void) {
     ASSERT(hm_remove(map, 999) == HASHMAP_ERR && errno == ENOENT);
     ASSERT(destroyed_count == 2);
 
+    // Overwriting a stored NULL value must not route NULL to the destroyer
+    // (a destroyer is allowed to dereference its argument).
+    ASSERT(hm_insert(map, 5, NULL) == HASHMAP_OK);
+    ASSERT(hm_insert(map, 5, &c) == HASHMAP_OK);
+    ASSERT(destroyed_count == 2);
+    ASSERT(hm_remove(map, 5) == HASHMAP_OK);
+    ASSERT(destroyed_count == 3 && last_destroyed == &c);
+
     // hm_destroy runs the destroyer once per remaining value.
     ASSERT(hm_insert(map, 3, &d) == HASHMAP_OK);
     ASSERT(hm_destroy(map) == HASHMAP_OK);
-    ASSERT(destroyed_count == 4);
+    ASSERT(destroyed_count == 5);
 
     // NULL destroyer: static values stay untouched through overwrite,
     // remove and destroy.
@@ -180,7 +188,7 @@ static int ownership(void) {
     ASSERT(hm_insert(map, 2, &c) == HASHMAP_OK);
     ASSERT(hm_remove(map, 2) == HASHMAP_OK);
     ASSERT(hm_destroy(map) == HASHMAP_OK);
-    ASSERT(destroyed_count == 4);
+    ASSERT(destroyed_count == 5);
     ASSERT(a == 17);
 
     return PASS;
