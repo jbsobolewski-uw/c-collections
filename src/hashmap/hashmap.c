@@ -10,8 +10,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define MIN_INITIAL_CAPACITY    64
-#define HASH_32_VALUE           0x45d9f3b
+#define MIN_INITIAL_CAPACITY 64
+#define HASH_32_VALUE        0x45d9f3b
 
 /**
  * @brief Represents a single entry (key-value pair) within the hash map.
@@ -20,28 +20,33 @@
  */
 typedef struct HashMapEntry {
     uint32_t key; /**< The 32-bit unsigned integer key used for hashing. */
-    void *value; /**< A pointer to the stored value associated with the key. */
-    bool occupied; /**< Flag indicating whether this slot currently holds a valid entry. */
+    void *value;  /**< A pointer to the stored value associated with the key. */
+    bool  occupied; /**< Flag indicating whether this slot currently holds a
+                       valid entry. */
 } hash_entry_t;
 
 /**
  * @brief The main hash map structure.
  * * Implements a hash map using open addressing with linear probing.
  * It keeps track of its current capacity, number of elements (size), and an
- * optional function to safely destroy/free the stored values when they are removed.
+ * optional function to safely destroy/free the stored values when they are
+ * removed.
  */
 struct HashMap {
     hash_entry_t *entries; /**< Array of hash map entries. */
-    size_t capacity; /**< Total number of allocated slots in the entries array. */
-    size_t size; /**< Current number of elements stored in the hash map. */
-    hm_object_destroyer_func_t *object_destroyer; /**< Function pointer used to free stored values. Can be NULL. */
+    size_t capacity; /**< Total number of allocated slots in the entries array.
+                      */
+    size_t size;     /**< Current number of elements stored in the hash map. */
+    hm_object_destroyer_func_t
+            *object_destroyer; /**< Function pointer used to free stored values.
+                                  Can be NULL. */
     unsigned flags; /**< Behaviour flags passed to hm_create (HASHMAP_*). */
 };
 
 /**
  * @brief Computes a 32-bit hash from a 32-bit integer.
- * * Uses a bit-mixing integer hash function (often associated with Thomas Wang's hash)
- * to ensure a good distribution of keys across the hash map.
+ * * Uses a bit-mixing integer hash function (often associated with Thomas
+ * Wang's hash) to ensure a good distribution of keys across the hash map.
  * * @param x The integer key to hash.
  * @return The computed 32-bit hash value.
  */
@@ -52,28 +57,33 @@ static uint32_t hash_uint32(uint32_t x) {
     return x;
 }
 
+
 /**
  * @brief Creates and initializes a new hash map.
  * * Allocates memory for the hash map structure and its internal entries array.
  * The initial capacity is bounded by MIN_INITIAL_CAPACITY.
  * * @param capacity The desired initial capacity of the hash map.
- * @param object_destroyer A function pointer to handle freeing stored values. Pass NULL if not needed.
+ * @param object_destroyer A function pointer to handle freeing stored values.
+ * Pass NULL if not needed.
  * @param flags Bitwise OR of HASHMAP_* behaviour flags, or 0 for defaults.
- * @return A pointer to the newly created hash map, or NULL if memory allocation fails.
+ * @return A pointer to the newly created hash map, or NULL if memory allocation
+ * fails.
  */
-hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *object_destroyer,
-                      unsigned flags) {
+hash_map_t *hm_create(size_t                      capacity,
+                      hm_object_destroyer_func_t *object_destroyer,
+                      unsigned                    flags) {
     hash_map_t *map = malloc(sizeof(hash_map_t));
     if (!map) {
         errno = ENOMEM;
         return NULL;
     }
 
-    map->capacity = (capacity < MIN_INITIAL_CAPACITY) ? MIN_INITIAL_CAPACITY : capacity;
-    map->size = 0;
-    map->entries = calloc(map->capacity, sizeof(hash_entry_t));
+    map->capacity =
+            (capacity < MIN_INITIAL_CAPACITY) ? MIN_INITIAL_CAPACITY : capacity;
+    map->size             = 0;
+    map->entries          = calloc(map->capacity, sizeof(hash_entry_t));
     map->object_destroyer = object_destroyer;
-    map->flags = flags;
+    map->flags            = flags;
 
     if (!map->entries) {
         free(map);
@@ -84,27 +94,28 @@ hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *object_destro
     return map;
 }
 
+
 /**
  * @brief Finds the correct slot index for a given key using linear probing.
- * * Scans the entries array starting from the hashed index. It stops when it finds
- * either an empty slot or a slot containing the exact matching key.
- * The caller must guarantee at least one free slot exists (size < capacity),
+ * * Scans the entries array starting from the hashed index. It stops when it
+ * finds either an empty slot or a slot containing the exact matching key. The
+ * caller must guarantee at least one free slot exists (size < capacity),
  * otherwise a probe for an absent key would never terminate.
  * * @param map Pointer to the hash map.
  * @param key The key to locate.
- * @return The index of the array slot where the key resides or where it should be inserted.
+ * @return The index of the array slot where the key resides or where it should
+ * be inserted.
  */
 static size_t hm_find_slot(hash_map_t *map, uint32_t key) {
     size_t index = hash_uint32(key) % map->capacity;
 
     while (map->entries[index].occupied) {
-        if (map->entries[index].key == key) {
-            return index; // Key already exists
-        }
-        index = (index + 1) % map->capacity; // Linear probing
+        if (map->entries[index].key == key) return index; // Key already exists
+        index = (index + 1) % map->capacity;              // Linear probing
     }
     return index; // Empty slot
 }
+
 
 /**
  * @brief Places a key-value pair into the table without any resizing logic.
@@ -119,12 +130,14 @@ static void hm_place(hash_map_t *map, uint32_t key, void *value) {
     size_t index = hm_find_slot(map, key);
     if (!map->entries[index].occupied) {
         map->entries[index].occupied = true;
-        map->entries[index].key = key;
+        map->entries[index].key      = key;
         map->size++;
-    } else if (map->object_destroyer) map->object_destroyer(map->entries[index].value);
+    } else if (map->object_destroyer)
+        map->object_destroyer(map->entries[index].value);
 
     map->entries[index].value = value;
 }
+
 
 /**
  * @brief Rehashes all existing entries into a table of the given capacity.
@@ -136,26 +149,23 @@ static void hm_place(hash_map_t *map, uint32_t key, void *value) {
  * (the map is left unchanged in that case).
  */
 static bool hm_rehash(hash_map_t *map, size_t new_capacity) {
-    size_t old_capacity = map->capacity;
-    hash_entry_t *old_entries = map->entries;
+    size_t        old_capacity = map->capacity;
+    hash_entry_t *old_entries  = map->entries;
 
     hash_entry_t *new_entries = calloc(new_capacity, sizeof(hash_entry_t));
-    if (!new_entries) {
-        return false;
-    }
+    if (!new_entries) return false;
 
     map->capacity = new_capacity;
-    map->entries = new_entries;
-    map->size = 0;
+    map->entries  = new_entries;
+    map->size     = 0;
 
-    for (size_t i = 0; i < old_capacity; i++) {
-        if (old_entries[i].occupied) {
+    for (size_t i = 0; i < old_capacity; i++)
+        if (old_entries[i].occupied)
             hm_place(map, old_entries[i].key, old_entries[i].value);
-        }
-    }
     free(old_entries);
     return true;
 }
+
 
 /**
  * @brief Inserts a key-value pair into the hash map.
@@ -187,6 +197,7 @@ int hm_insert(hash_map_t *map, uint32_t key, void *value) {
     return HASHMAP_OK;
 }
 
+
 /**
  * @brief Retrieves a value from the hash map by its key.
  * * @param map Pointer to the hash map.
@@ -200,13 +211,11 @@ void *hm_get(hash_map_t *map, uint32_t key) {
         return NULL;
     }
 
-    size_t index = hash_uint32(key) % map->capacity;
+    size_t index       = hash_uint32(key) % map->capacity;
     size_t start_index = index;
 
     while (map->entries[index].occupied) {
-        if (map->entries[index].key == key) {
-            return map->entries[index].value;
-        }
+        if (map->entries[index].key == key) return map->entries[index].value;
         index = (index + 1) % map->capacity;
         if (index == start_index) break; // The whole table has been scanned
     }
@@ -214,6 +223,7 @@ void *hm_get(hash_map_t *map, uint32_t key) {
     errno = ENOENT;
     return NULL;
 }
+
 
 /**
  * @brief Removes a key-value pair from the hash map.
@@ -230,9 +240,9 @@ int hm_remove(hash_map_t *map, uint32_t key) {
         return HASHMAP_ERR;
     }
 
-    size_t i = hash_uint32(key) % map->capacity;
+    size_t i           = hash_uint32(key) % map->capacity;
     size_t start_index = i;
-    bool scanned_all = false;
+    bool   scanned_all = false;
     while (map->entries[i].occupied) {
         if (map->entries[i].key == key) break;
         i = (i + 1) % map->capacity;
@@ -247,12 +257,11 @@ int hm_remove(hash_map_t *map, uint32_t key) {
         return HASHMAP_ERR;
     }
 
-    if (map->object_destroyer && map->entries[i].value) {
+    if (map->object_destroyer && map->entries[i].value)
         map->object_destroyer(map->entries[i].value);
-    }
 
     map->entries[i].occupied = false;
-    map->entries[i].value = NULL;
+    map->entries[i].value    = NULL;
     map->size--;
 
     // Rehash the cluster
@@ -262,9 +271,10 @@ int hm_remove(hash_map_t *map, uint32_t key) {
         if (!map->entries[j].occupied) break;
 
         uint32_t k = map->entries[j].key;
-        void *v = map->entries[j].value;
+        void    *v = map->entries[j].value;
 
-        // Important: remove without invoking the destructor - the entry is only being moved
+        // Important: remove without invoking the destructor - the entry is only
+        // being moved
         map->entries[j].occupied = false;
         map->size--;
 
@@ -285,6 +295,7 @@ int hm_remove(hash_map_t *map, uint32_t key) {
     return HASHMAP_OK;
 }
 
+
 /**
  * @brief Destroys the hash map and frees all associated memory.
  * * Iterates through all entries and safely destroys their values using
@@ -303,7 +314,7 @@ int hm_destroy(hash_map_t *map) {
             if (map->entries[i].occupied && map->entries[i].value) {
                 map->object_destroyer(map->entries[i].value);
                 map->entries[i].occupied = false;
-                map->entries[i].value = NULL;
+                map->entries[i].value    = NULL;
                 map->size--;
             }
         }
@@ -314,11 +325,13 @@ int hm_destroy(hash_map_t *map) {
     return HASHMAP_OK;
 }
 
+
 /**
  * @brief Returns the current number of elements via an output parameter.
  * * @param map Pointer to the hash map.
  * @param out_size Pointer where the size will be stored.
- * @return HASHMAP_OK, or HASHMAP_ERR (sets errno = EINVAL) on invalid arguments.
+ * @return HASHMAP_OK, or HASHMAP_ERR (sets errno = EINVAL) on invalid
+ * arguments.
  */
 int hm_size(hash_map_t *map, size_t *out_size) {
     if (!map || !out_size) {

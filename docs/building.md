@@ -82,6 +82,15 @@ If a `clang-tidy` executable is found on the PATH, it runs alongside
 compilation (`CMAKE_C_CLANG_TIDY`), using the configuration from the
 project-root [`.clang-tidy`](../.clang-tidy) file.
 
+## Formatting
+
+The code style is defined in [`.clang-format`](../.clang-format): Java-like
+attached braces, 4-column indent, braceless single-statement ifs/loops,
+short functions on a single line, and a trailing newline in every file.
+Reformat with `clang-format -i <files>` or CLion's Reformat Code action.
+The braceless style is guarded by clang-tidy's
+`readability-misleading-indentation` check.
+
 ## Linking against the library
 
 ```bash

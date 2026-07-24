@@ -8,14 +8,14 @@
 
 /* Internal node structure */
 typedef struct list_node {
-    void *data;
+    void             *data;
     struct list_node *next;
 } list_node_t;
 
 /* Internal list structure */
 struct list {
-    list_node_t *head;
-    size_t size;
+    list_node_t                 *head;
+    size_t                       size;
     object_destructor_function_t destructor;
 
     /* Pool of recycled nodes (free list) */
@@ -27,7 +27,7 @@ struct list {
 static list_node_t *allocate_node(list_t *list) {
     if (list->recycled_nodes != NULL) {
         /* Take a node from the recycling pool */
-        list_node_t *node = list->recycled_nodes;
+        list_node_t *node    = list->recycled_nodes;
         list->recycled_nodes = node->next;
         return node;
     }
@@ -35,11 +35,13 @@ static list_node_t *allocate_node(list_t *list) {
     return (list_node_t *) malloc(sizeof(list_node_t));
 }
 
+
 static void free_node(list_t *list, list_node_t *node) {
     /* Push the node onto the recycling pool instead of calling free() */
-    node->next = list->recycled_nodes;
+    node->next           = list->recycled_nodes;
     list->recycled_nodes = node;
 }
+
 
 /* --- API implementation --- */
 
@@ -50,13 +52,14 @@ list_t *list_create(object_destructor_function_t dtor) {
         return NULL;
     }
 
-    list->head = NULL;
-    list->size = 0;
-    list->destructor = dtor;
+    list->head           = NULL;
+    list->size           = 0;
+    list->destructor     = dtor;
     list->recycled_nodes = NULL;
 
     return list;
 }
+
 
 int list_destroy(list_t *list) {
     if (!list) {
@@ -68,9 +71,7 @@ int list_destroy(list_t *list) {
     list_node_t *current = list->head;
     while (current) {
         list_node_t *next = current->next;
-        if (list->destructor && current->data) {
-            list->destructor(current->data);
-        }
+        if (list->destructor && current->data) list->destructor(current->data);
         free(current); /* Final release */
         current = next;
     }
@@ -89,6 +90,7 @@ int list_destroy(list_t *list) {
     return LIST_OK;
 }
 
+
 int list_add(list_t *list, void *data) {
     if (!list) {
         errno = EINVAL;
@@ -103,11 +105,12 @@ int list_add(list_t *list, void *data) {
 
     new_node->data = data;
     new_node->next = list->head;
-    list->head = new_node;
+    list->head     = new_node;
     list->size++;
 
     return LIST_OK;
 }
+
 
 int list_remove(list_t *list, void *data) {
     if (!list) {
@@ -125,9 +128,8 @@ int list_remove(list_t *list, void *data) {
             *current_ptr = node_to_remove->next;
 
             /* Invoke the destructor before recycling the node */
-            if (list->destructor && node_to_remove->data) {
+            if (list->destructor && node_to_remove->data)
                 list->destructor(node_to_remove->data);
-            }
 
             free_node(list, node_to_remove); /* Recycle */
             list->size--;
@@ -142,6 +144,7 @@ int list_remove(list_t *list, void *data) {
     return LIST_ERR;
 }
 
+
 int list_size(list_t *list, size_t *out_size) {
     if (!list || !out_size) {
         errno = EINVAL;
@@ -151,6 +154,7 @@ int list_size(list_t *list, size_t *out_size) {
     *out_size = list->size;
     return LIST_OK;
 }
+
 
 int list_is_empty(list_t *list, int *out_is_empty) {
     if (!list || !out_is_empty) {
@@ -162,6 +166,7 @@ int list_is_empty(list_t *list, int *out_is_empty) {
     return LIST_OK;
 }
 
+
 int list_foreach(list_t *list, object_job_function_t job, void *argstruct) {
     if (!list || !job) {
         errno = EINVAL;
@@ -171,9 +176,7 @@ int list_foreach(list_t *list, object_job_function_t job, void *argstruct) {
     list_node_t *current = list->head;
     while (current) {
         /* A non-zero return value from job() stops the iteration */
-        if (job(current->data, argstruct) != 0) {
-            break;
-        }
+        if (job(current->data, argstruct) != 0) break;
         current = current->next;
     }
 

@@ -1,57 +1,59 @@
-BasedOnStyle: GNU
+---
+# Java-like layout: attached braces, spaces only, 4-column indent.
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Braces: always `if (...) {`, `} else {`; never on their own line.
 BreakBeforeBraces: Attach
-AllowShortIfStatementsOnASingleLine: true
-AllowShortLoopsOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortBlocksOnASingleLine: Never
-AllowShortFunctionsOnASingleLine: Inline
-AlwaysBreakAfterDefinitionReturnType: None
+# Remove braces around single-statement if/loop bodies (braceless style);
+# never insert them.
+RemoveBracesLLVM: true
+InsertBraces: false
 
-# Spacing between function declarations
-SpaceBeforeParens: Never
-SpaceAfterCStyleCast: true
-
-# Single line functions inline
-BinPackArguments: false
-BinPackParameters: false
-
-# Braceless ifs/loops with single statements
-BraceWrapping:
-  AfterControlStatement: false
-
-# Two blank lines between functions
+# Indentation and layout
+IndentWidth: 4
+ContinuationIndentWidth: 8
+UseTab: Never
+ColumnLimit: 80
+# Project convention: two blank lines between top-level function definitions.
+# clang-format preserves them via MaxEmptyLinesToKeep but cannot insert them;
+# SeparateDefinitionBlocks must stay Leave - Always would collapse the two
+# blank lines back to one.
 MaxEmptyLinesToKeep: 2
-SeparateDefinitionBlocks: Always
-
-# Align consecutive
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
-AlignConsecutiveMacros: true
-AlignConsecutiveBitFields: true
-
-# Indentation & spacing
-IndentWidth: 2
-TabWidth: 8
-UseTab: Always
+SeparateDefinitionBlocks: Leave
 IndentCaseLabels: true
 IndentPPDirectives: AfterHash
-PointerAlignment: Left
+
+# Every source file ends with exactly one trailing newline.
+InsertNewlineAtEOF: true
+
+# Short constructs: single-statement ifs/loops and short functions collapse
+# onto one line.
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+
+# Pointers bind to the name: `list_t *list`.
+PointerAlignment: Right
 DerivePointerAlignment: false
-SpaceAfterLogicalNot: true
-SpaceBeforeAssignmentOperators: true
-SpaceInEmptyParentheses: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
-SpacesInAngles: false
+SpaceAfterCStyleCast: true
+
+# Align consecutive assignments, declarations, macros and bit-fields.
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveBitFields: Consecutive
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align
+
+# Keep include order as written (order can matter in C).
+SortIncludes: Never
 
 # Line breaking
-ColumnLimit: 80
-PenaltyBreakBeforeFirstCallParameter: 1
 BreakBeforeBinaryOperators: None
 AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
-
-# Preprocessor
-AlignAfterOpenBracket: true
-AlignTrailingComments: true
+PenaltyBreakBeforeFirstCallParameter: 1

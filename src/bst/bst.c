@@ -7,33 +7,35 @@
 #include <errno.h>
 
 struct bst_node {
-    void *data;
+    void            *data;
     struct bst_node *left;
     struct bst_node *right;
 };
 
 struct bst {
-    bst_node_t *root;
-    size_t size;
+    bst_node_t                  *root;
+    size_t                       size;
     object_comparator_function_t cmp;
     object_destructor_function_t destructor;
-    bst_node_t *recycled_nodes;
+    bst_node_t                  *recycled_nodes;
 };
 
 /* --- Node Recycling Memory Management --- */
 static bst_node_t *allocate_node(bst_t *tree) {
     if (tree->recycled_nodes) {
-        bst_node_t *node = tree->recycled_nodes;
+        bst_node_t *node     = tree->recycled_nodes;
         tree->recycled_nodes = node->left; /* use left as next pointer */
         return node;
     }
     return (bst_node_t *) malloc(sizeof(bst_node_t));
 }
 
+
 static void free_node(bst_t *tree, bst_node_t *node) {
-    node->left = tree->recycled_nodes;
+    node->left           = tree->recycled_nodes;
     tree->recycled_nodes = node;
 }
+
 
 inline int bst_cmp_signed_int(void *a, void *b) {
     const signed long int x = *(const signed long int *) a;
@@ -44,6 +46,7 @@ inline int bst_cmp_signed_int(void *a, void *b) {
     return BST_EQ;
 }
 
+
 inline int bst_cmp_unsigned_int(void *a, void *b) {
     const unsigned long int x = *(const unsigned long int *) a;
     const unsigned long int y = *(const unsigned long int *) b;
@@ -53,31 +56,33 @@ inline int bst_cmp_unsigned_int(void *a, void *b) {
     return BST_EQ;
 }
 
+
 /* --- API Implementation --- */
-bst_t *bst_create(object_comparator_function_t cmp, object_destructor_function_t dtor) {
+bst_t *bst_create(object_comparator_function_t cmp,
+                  object_destructor_function_t dtor) {
     bst_t *tree = (bst_t *) malloc(sizeof(bst_t));
     if (!tree) {
         errno = ENOMEM;
         return NULL;
     }
 
-    tree->root = NULL;
-    tree->size = 0;
-    tree->cmp = cmp ? cmp : bst_cmp_signed_int;
-    tree->destructor = dtor;
+    tree->root           = NULL;
+    tree->size           = 0;
+    tree->cmp            = cmp ? cmp : bst_cmp_signed_int;
+    tree->destructor     = dtor;
     tree->recycled_nodes = NULL;
     return tree;
 }
+
 
 static void destroy_nodes_recursive(bst_t *tree, bst_node_t *node) {
     if (!node) return;
     destroy_nodes_recursive(tree, node->left);
     destroy_nodes_recursive(tree, node->right);
-    if (tree->destructor && node->data) {
-        tree->destructor(node->data);
-    }
+    if (tree->destructor && node->data) tree->destructor(node->data);
     free(node);
 }
+
 
 int bst_destroy(bst_t *tree) {
     if (!tree) return (errno = EINVAL, BST_ERR);
@@ -94,6 +99,7 @@ int bst_destroy(bst_t *tree) {
     return BST_OK;
 }
 
+
 int bst_insert(bst_t *tree, void *data) {
     if (!tree) return (errno = EINVAL, BST_ERR);
 
@@ -101,25 +107,24 @@ int bst_insert(bst_t *tree, void *data) {
     while (*curr) {
         int res = tree->cmp(data, (*curr)->data);
         /* Duplicates (<= BST_EQ) go to the left branch */
-        if (res <= BST_EQ) {
-            curr = &(*curr)->left;
-        } else {
-            curr = &(*curr)->right;
-        }
+        if (res <= BST_EQ) curr = &(*curr)->left;
+        else curr = &(*curr)->right;
     }
 
     bst_node_t *new_node = allocate_node(tree);
     if (!new_node) return (errno = ENOMEM, BST_ERR);
 
-    new_node->data = data;
-    new_node->left = NULL;
+    new_node->data  = data;
+    new_node->left  = NULL;
     new_node->right = NULL;
-    *curr = new_node;
+    *curr           = new_node;
     tree->size++;
     return BST_OK;
 }
 
-static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, int *removed) {
+
+static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data,
+                                    int *removed) {
     if (!root) return NULL;
 
     int res = tree->cmp(data, root->data);
@@ -144,7 +149,8 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
             return temp;
         }
 
-        /* Node with two children: find the successor (smallest in the right subtree) */
+        /* Node with two children: find the successor (smallest in the right
+         * subtree) */
         bst_node_t **succ_ptr = &root->right;
         while ((*succ_ptr)->left) succ_ptr = &(*succ_ptr)->left;
         bst_node_t *succ = *succ_ptr;
@@ -162,14 +168,16 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
     return root;
 }
 
+
 int bst_remove(bst_t *tree, void *data) {
     if (!tree) return (errno = EINVAL, BST_ERR);
     int removed = 0;
-    tree->root = remove_recursive(tree, tree->root, data, &removed);
+    tree->root  = remove_recursive(tree, tree->root, data, &removed);
     if (!removed) return (errno = ENOENT, BST_ERR);
     tree->size--;
     return BST_OK;
 }
+
 
 int bst_search(bst_t *tree, void *data, void **out_data) {
     if (!tree || !out_data) return (errno = EINVAL, BST_ERR);
@@ -186,11 +194,13 @@ int bst_search(bst_t *tree, void *data, void **out_data) {
     return (errno = ENOENT, BST_ERR);
 }
 
+
 int bst_size(bst_t *tree, size_t *out_size) {
     if (!tree || !out_size) return (errno = EINVAL, BST_ERR);
     *out_size = tree->size;
     return BST_OK;
 }
+
 
 int bst_is_empty(bst_t *tree, int *out_is_empty) {
     if (!tree || !out_is_empty) return (errno = EINVAL, BST_ERR);
@@ -198,8 +208,23 @@ int bst_is_empty(bst_t *tree, int *out_is_empty) {
     return BST_OK;
 }
 
+
 /* --- Accessors for bst_traversals.c --- */
-inline bst_node_t *bst_get_root(bst_t *tree) { return tree ? tree->root : NULL; }
-inline bst_node_t *bst_node_get_left(bst_node_t *node) { return node ? node->left : NULL; }
-inline bst_node_t *bst_node_get_right(bst_node_t *node) { return node ? node->right : NULL; }
-inline void *bst_node_get_data(bst_node_t *node) { return node ? node->data : NULL; }
+inline bst_node_t *bst_get_root(bst_t *tree) {
+    return tree ? tree->root : NULL;
+}
+
+
+inline bst_node_t *bst_node_get_left(bst_node_t *node) {
+    return node ? node->left : NULL;
+}
+
+
+inline bst_node_t *bst_node_get_right(bst_node_t *node) {
+    return node ? node->right : NULL;
+}
+
+
+inline void *bst_node_get_data(bst_node_t *node) {
+    return node ? node->data : NULL;
+}

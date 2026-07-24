@@ -26,13 +26,15 @@ extern "C" {
 
 /**
  * @brief Creates a new queue.
- * @param dtor Function used to clean up queue elements when the queue is destroyed. Can be NULL.
+ * @param dtor Function used to clean up queue elements when the queue is
+ * destroyed. Can be NULL.
  * @return Pointer to the new queue, or NULL on error (sets errno = ENOMEM).
  */
 queue_t *queue_create(object_destructor_function_t dtor);
 
 /**
- * @brief Destroys the queue, invoking the destructor on the remaining elements and freeing memory.
+ * @brief Destroys the queue, invoking the destructor on the remaining elements
+ * and freeing memory.
  * @param q Pointer to the queue.
  * @return QUEUE_OK or QUEUE_ERR (sets errno).
  */
@@ -74,7 +76,8 @@ int queue_is_empty(queue_t *q, int *out_is_empty);
 /**
  * @brief Iterates over all queue elements (from the front to the back).
  * @param q Pointer to the queue.
- * @param job Function invoked on every element (a non-zero return value stops the iteration).
+ * @param job Function invoked on every element (a non-zero return value stops
+ * the iteration).
  * @param argstruct Extra argument passed to the job function.
  * @return QUEUE_OK or QUEUE_ERR (sets errno).
  */
@@ -84,4 +87,4 @@ int queue_foreach(queue_t *q, object_job_function_t job, void *argstruct);
 }
 #endif
 
-#endif //C_COLLECTIONS_QUEUE_H
+#endif // C_COLLECTIONS_QUEUE_H
