@@ -145,18 +145,19 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
         }
 
         /* Node with two children: find the successor (smallest in the right subtree) */
-        bst_node_t *temp = root->right;
-        while (temp && temp->left) temp = temp->left;
+        bst_node_t **succ_ptr = &root->right;
+        while ((*succ_ptr)->left) succ_ptr = &(*succ_ptr)->left;
+        bst_node_t *succ = *succ_ptr;
 
         /* Swap the data; destroy the old data first so no memory is leaked */
         if (tree->destructor) tree->destructor(root->data);
-        root->data = temp ? temp->data : NULL;
+        root->data = succ->data;
 
-        /* Remove the successor. Temporarily disable the destructor so it does not destroy the data we just copied */
-        object_destructor_function_t temp_dtor = tree->destructor;
-        tree->destructor = NULL;
-        root->right = remove_recursive(tree, root->right, temp ? temp->data : NULL, removed);
-        tree->destructor = temp_dtor;
+        /* Unlink the successor node structurally (it has no left child).
+         * Removing it by key instead would be ambiguous when the successor's
+         * value also exists as a duplicate on the path to it. */
+        *succ_ptr = succ->right;
+        free_node(tree, succ);
     }
     return root;
 }
