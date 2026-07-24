@@ -15,7 +15,7 @@
 static int api(void) {
   size_t size = 12345;
 
-  hash_map_t *map = hm_create(64, free);
+  hash_map_t *map = hm_create(64, free, 0);
   ASSERT(map != NULL);
 
   ASSERT(hm_size(map, &size) == HASHMAP_OK);
@@ -94,7 +94,7 @@ static int edge(void) {
 
   // Capacity 0 is raised to the internal minimum; the map works normally.
   static int values[5];
-  hash_map_t *map = hm_create(0, NULL);
+  hash_map_t *map = hm_create(0, NULL, 0);
   ASSERT(map != NULL);
 
   errno = 0;
@@ -140,7 +140,7 @@ static int ownership(void) {
   destroyed_count = 0;
   last_destroyed = NULL;
 
-  hash_map_t *map = hm_create(64, counting_destroyer);
+  hash_map_t *map = hm_create(64, counting_destroyer, 0);
   ASSERT(map != NULL);
 
   ASSERT(hm_insert(map, 1, &a) == HASHMAP_OK);
@@ -169,7 +169,7 @@ static int ownership(void) {
 
   // NULL destroyer: static values stay untouched through overwrite,
   // remove and destroy.
-  map = hm_create(64, NULL);
+  map = hm_create(64, NULL, 0);
   ASSERT(map != NULL);
   a = 17;
   ASSERT(hm_insert(map, 1, &a) == HASHMAP_OK);
@@ -214,7 +214,7 @@ static int collisions(void) {
   }
   ASSERT(found == COLLIDING_KEYS);
 
-  hash_map_t *map = hm_create(TEST_CAPACITY, NULL);
+  hash_map_t *map = hm_create(TEST_CAPACITY, NULL, 0);
   ASSERT(map != NULL);
 
   // Insert all but the last colliding key (well below the resize
@@ -268,7 +268,7 @@ static int growth(void) {
   static int values[GROWTH_KEYS + GROWTH_EXTRA];
   size_t size = 0;
 
-  hash_map_t *map = hm_create(64, NULL);
+  hash_map_t *map = hm_create(64, NULL, 0);
   ASSERT(map != NULL);
 
   for (uint32_t i = 0; i < GROWTH_KEYS; ++i) {
@@ -311,6 +311,63 @@ static int growth(void) {
   return PASS;
 }
 
+#define SHRINK_KEYS 2000u
+#define SHRINK_KEEP 100u
+
+// HASHMAP_AUTO_SHRINK trades memory for removal latency: with the flag set
+// the table halves once the load factor drops to 1/4; without it removals
+// never reallocate. Observed through the wrap harness counters -
+// alloc_counter only moves when a rehash allocates a new table.
+static int shrink(void) {
+  static int values[SHRINK_KEYS];
+  memory_test_data_t *mtd = get_memory_test_data();
+  size_t size = 0;
+
+  // Default map (flags 0): draining it must never allocate.
+  hash_map_t *map = hm_create(64, NULL, 0);
+  ASSERT(map != NULL);
+  for (uint32_t i = 0; i < SHRINK_KEYS; ++i) {
+    values[i] = (int) i;
+    ASSERT(hm_insert(map, i, &values[i]) == HASHMAP_OK);
+  }
+  unsigned allocs_before = mtd->alloc_counter;
+  for (uint32_t i = 0; i < SHRINK_KEYS; ++i)
+    ASSERT(hm_remove(map, i) == HASHMAP_OK);
+  ASSERT(mtd->alloc_counter == allocs_before);
+  ASSERT(hm_size(map, &size) == HASHMAP_OK && size == 0);
+  ASSERT(hm_destroy(map) == HASHMAP_OK);
+
+  // Auto-shrink map: draining it rehashes into smaller tables, and every
+  // surviving entry stays intact across the shrinks.
+  map = hm_create(64, NULL, HASHMAP_AUTO_SHRINK);
+  ASSERT(map != NULL);
+  for (uint32_t i = 0; i < SHRINK_KEYS; ++i)
+    ASSERT(hm_insert(map, i, &values[i]) == HASHMAP_OK);
+
+  allocs_before = mtd->alloc_counter;
+  for (uint32_t i = 0; i < SHRINK_KEYS - SHRINK_KEEP; ++i) {
+    ASSERT(hm_remove(map, i) == HASHMAP_OK);
+    if (i % 500 == 0) {
+      for (uint32_t j = i + 1; j < SHRINK_KEYS; ++j)
+        ASSERT(hm_get(map, j) == &values[j]);
+    }
+  }
+  ASSERT(mtd->alloc_counter > allocs_before); /* shrinking actually rehashed */
+  ASSERT(hm_size(map, &size) == HASHMAP_OK && size == SHRINK_KEEP);
+  for (uint32_t j = SHRINK_KEYS - SHRINK_KEEP; j < SHRINK_KEYS; ++j)
+    ASSERT(hm_get(map, j) == &values[j]);
+
+  // The map keeps working after shrinking: grow it right back up.
+  for (uint32_t i = 0; i < 500; ++i)
+    ASSERT(hm_insert(map, i, &values[i]) == HASHMAP_OK);
+  ASSERT(hm_size(map, &size) == HASHMAP_OK && size == SHRINK_KEEP + 500);
+  for (uint32_t i = 0; i < 500; ++i)
+    ASSERT(hm_get(map, i) == &values[i]);
+
+  ASSERT(hm_destroy(map) == HASHMAP_OK);
+  return PASS;
+}
+
 // Allocation-failure scenario for memory_test(). Heap ints are stored with
 // free as the destroyer, so every path must end in hm_destroy to keep
 // alloc_counter == free_counter.
@@ -328,9 +385,9 @@ static unsigned long scenario(void) {
 
   // hm_create allocates twice (struct + entries array).
   errno = 0;
-  if ((map = hm_create(64, free)) != NULL)
+  if ((map = hm_create(64, free, 0)) != NULL)
     visited |= V(1, 0);
-  else if (errno == ENOMEM && (map = hm_create(64, free)) != NULL)
+  else if (errno == ENOMEM && (map = hm_create(64, free, 0)) != NULL)
     visited |= V(2, 0);
   else
     return visited | V(4, 0);
@@ -417,7 +474,7 @@ static int memory(void) {
 
 static const test_list_t test_list[] = {
   TEST(api), TEST(edge), TEST(ownership),
-  TEST(collisions), TEST(growth), TEST(memory),
+  TEST(collisions), TEST(growth), TEST(shrink), TEST(memory),
 };
 
 int main(int argc, char *argv[]) {

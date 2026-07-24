@@ -23,9 +23,17 @@ parameters take `hm_object_destroyer_func_t *`.
 
 ## API
 
-### `hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *destroyer)`
+### `hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *destroyer, unsigned flags)`
 Creates a map with at least `capacity` slots (raised to the internal minimum
-of 64 if smaller). `destroyer` may be `NULL`.
+of 64 if smaller). `destroyer` may be `NULL`. `flags` is a bitwise OR of
+behaviour flags, or `0` for the defaults:
+
+- `HASHMAP_AUTO_SHRINK` — the table halves its capacity when removals bring
+  the load factor down to 1/4 (never below the minimum). The flag is a
+  latency/memory trade-off: without it removals never reallocate, so their
+  cost stays flat but a map that grew large keeps its memory; with it the
+  memory is reclaimed at the cost of an occasional rehash pause on remove.
+
 **Returns:** the new map, or `NULL` with `errno = ENOMEM`.
 
 ### `int hm_insert(hash_map_t *map, uint32_t key, void *value)`
@@ -52,14 +60,20 @@ Destroys the map. With a destroyer set, all stored values are destroyed too.
 ### `int hm_size(hash_map_t *map, size_t *out_size)`
 Stores the element count in `*out_size`. O(1). **Errors:** `EINVAL`.
 
-## Growth and load factor
+## Growth, shrinking and load factor
 
 - The table doubles in capacity when an insert finds the load factor at or
   above **3/4**, rehashing every entry into the new table.
+- With `HASHMAP_AUTO_SHRINK`, the table halves when a removal brings the
+  load factor down to **1/4** (never below the minimum capacity of 64). The
+  3/4-grow / 1/4-shrink gap prevents grow-shrink thrashing around a
+  boundary. Without the flag the table never shrinks.
 - A failed growth (allocation failure) is **tolerated**: the map stays intact
   and inserts continue to succeed while free slots remain. Only when the
   table is completely full and cannot grow does `hm_insert` fail with
-  `ENOMEM`. Expect degraded (long-probe) performance in that state.
+  `ENOMEM`. Expect degraded (long-probe) performance in that state. A failed
+  shrink allocation is tolerated the same way: the table simply stays at its
+  current size.
 
 ## Ownership semantics
 
@@ -70,7 +84,7 @@ overwrite (`hm_insert` on an existing key), on `hm_remove`, and on
 ## Example
 
 ```c
-hash_map_t *m = hm_create(0, free);   /* default capacity, owns values */
+hash_map_t *m = hm_create(0, free, 0);   /* default capacity, owns values */
 
 int *v = malloc(sizeof *v);
 *v = 7;
