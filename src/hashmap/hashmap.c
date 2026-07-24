@@ -132,7 +132,7 @@ static void hm_place(hash_map_t *map, uint32_t key, void *value) {
         map->entries[index].occupied = true;
         map->entries[index].key      = key;
         map->size++;
-    } else if (map->object_destroyer)
+    } else if (map->object_destroyer && map->entries[index].value)
         map->object_destroyer(map->entries[index].value);
 
     map->entries[index].value = value;
