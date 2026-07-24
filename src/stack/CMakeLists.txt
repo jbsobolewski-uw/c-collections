@@ -1,4 +1,4 @@
-add_library(stacklib
+add_collection_library(stacklib
         stack.c
         stack.h
 )

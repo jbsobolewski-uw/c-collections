@@ -1,37 +1,16 @@
-set(CMAKE_VERBOSE_MAKEFILE ON)
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 project(C-COLLECTIONS LANGUAGES C)
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
+# CMAKE_C_CLANG_TIDY expects the clang-tidy executable (the .clang-tidy
+# config file in the project root is picked up automatically).
+find_program(CLANG_TIDY_EXE clang-tidy)
+if (CLANG_TIDY_EXE)
+    set(CMAKE_C_CLANG_TIDY "${CLANG_TIDY_EXE}")
+endif ()
+
+# Compiler and linker flags are maintained in src/compilerflags.cmake
+# and src/linkerflags.cmake, included by src/CMakeLists.txt.
 include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(src)
-
-set(CMAKE_C_CLANG_TIDY "${PROJECT_SOURCE_DIR}/.clang-tidy")
-add_compile_options(
-        -pedantic
-        -Wall
-        -Wextra
-        -Wshadow
-        -Wconversion
-        -Wfloat-equal
-        -Wlogical-not-parentheses
-        -Wnull-dereference
-        -Wno-sign-compare
-        -Wno-unused-parameter
-        -Wno-uninitialized
-        -Wno-unused-function
-        -Werror
-        -fsanitize=undefined
-        -fno-sanitize-recover
-        -fno-omit-frame-pointer
-)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_options(-march=native -O3)
-endif ()
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-O1 -g)
-endif ()
