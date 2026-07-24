@@ -100,7 +100,7 @@ int bst_insert(bst_t *tree, void *data) {
     bst_node_t **curr = &tree->root;
     while (*curr) {
         int res = tree->cmp(data, (*curr)->data);
-        /* Duplikaty (<= BST_EQ) trafiają na lewą gałąź */
+        /* Duplicates (<= BST_EQ) go to the left branch */
         if (res <= BST_EQ) {
             curr = &(*curr)->left;
         } else {
@@ -124,13 +124,13 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
 
     int res = tree->cmp(data, root->data);
 
-    /* Czysta logika nawigacji za pomocą konwencji standardowego C */
+    /* Plain navigation logic following the standard C comparator convention */
     if (res < BST_EQ) {
         root->left = remove_recursive(tree, root->left, data, removed);
     } else if (res > BST_EQ) {
         root->right = remove_recursive(tree, root->right, data, removed);
     } else {
-        /* Węzeł znaleziony (res == BST_EQ) */
+        /* Node found (res == BST_EQ) */
         *removed = 1;
         if (!root->left) {
             bst_node_t *temp = root->right;
@@ -144,15 +144,15 @@ static bst_node_t *remove_recursive(bst_t *tree, bst_node_t *root, void *data, i
             return temp;
         }
 
-        /* Węzeł z dwójką dzieci: Znajdź następnika (najmniejszy w prawym poddrzewie) */
+        /* Node with two children: find the successor (smallest in the right subtree) */
         bst_node_t *temp = root->right;
         while (temp && temp->left) temp = temp->left;
 
-        /* Podmiana danych, najpierw niszczymy stare, by nie zgubić pamięci */
+        /* Swap the data; destroy the old data first so no memory is leaked */
         if (tree->destructor) tree->destructor(root->data);
         root->data = temp ? temp->data : NULL;
 
-        /* Usunięcie następnika. Wyłączamy tymczasowo destruktor, żeby nie zniszczyć danych, które właśnie skopiowaliśmy */
+        /* Remove the successor. Temporarily disable the destructor so it does not destroy the data we just copied */
         object_destructor_function_t temp_dtor = tree->destructor;
         tree->destructor = NULL;
         root->right = remove_recursive(tree, root->right, temp ? temp->data : NULL, removed);
@@ -179,7 +179,7 @@ int bst_search(bst_t *tree, void *data, void **out_data) {
             *out_data = curr->data;
             return BST_OK;
         }
-        /* Mniejsze na lewo, większe na prawo */
+        /* Smaller to the left, greater to the right */
         curr = (res < BST_EQ) ? curr->left : curr->right;
     }
     return (errno = ENOENT, BST_ERR);

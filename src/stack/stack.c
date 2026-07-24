@@ -6,23 +6,23 @@
 #include <stdlib.h>
 #include <errno.h>
 
-/* Wewnętrzna struktura węzła */
+/* Internal node structure */
 typedef struct stack_node {
     void* data;
     struct stack_node* next;
 } stack_node_t;
 
-/* Wewnętrzna struktura stosu */
+/* Internal stack structure */
 struct stack {
-    stack_node_t* top; /* Wierzchołek stosu */
+    stack_node_t* top; /* Top of the stack */
     size_t size;
     object_destructor_function_t destructor;
 
-    /* Pula zrecyklingowanych węzłów (free list) */
+    /* Pool of recycled nodes (free list) */
     stack_node_t* recycled_nodes;
 };
 
-/* --- Funkcje pomocnicze do recyklingu węzłów --- */
+/* --- Node recycling helpers --- */
 
 static stack_node_t* allocate_node(stack_t* stack) {
     if (stack->recycled_nodes != NULL) {
@@ -38,7 +38,7 @@ static void free_node(stack_t* stack, stack_node_t* node) {
     stack->recycled_nodes = node;
 }
 
-/* --- Implementacja API --- */
+/* --- API implementation --- */
 
 stack_t* stack_create(object_destructor_function_t dtor) {
     stack_t* stack = (stack_t*)malloc(sizeof(stack_t));
@@ -61,7 +61,7 @@ int stack_destroy(stack_t* stack) {
         return STACK_ERR;
     }
 
-    /* 1. Niszczenie aktywnych elementów stosu */
+    /* 1. Destroy the active stack elements */
     stack_node_t* current = stack->top;
     while (current) {
         stack_node_t* next = current->next;
@@ -72,7 +72,7 @@ int stack_destroy(stack_t* stack) {
         current = next;
     }
 
-    /* 2. Zwalnianie węzłów z puli recyklingu */
+    /* 2. Free the nodes held in the recycling pool */
     current = stack->recycled_nodes;
     while (current) {
         stack_node_t* next = current->next;
@@ -80,7 +80,7 @@ int stack_destroy(stack_t* stack) {
         current = next;
     }
 
-    /* 3. Zwolnienie struktury głównej */
+    /* 3. Free the main structure */
     free(stack);
 
     return STACK_OK;
@@ -98,7 +98,7 @@ int stack_push(stack_t* stack, void* data) {
         return STACK_ERR;
     }
 
-    /* Nowy węzeł staje się wierzchołkiem */
+    /* The new node becomes the top */
     new_node->data = data;
     new_node->next = stack->top;
     stack->top = new_node;
@@ -114,7 +114,7 @@ int stack_pop(stack_t* stack, void** out_data) {
     }
 
     if (stack->top == NULL) {
-        /* Stos jest pusty */
+        /* The stack is empty */
         errno = ENOENT;
         return STACK_ERR;
     }
@@ -122,20 +122,20 @@ int stack_pop(stack_t* stack, void** out_data) {
     stack_node_t* node_to_remove = stack->top;
     void* data = node_to_remove->data;
 
-    /* Przepinamy wierzchołek na kolejny element w dół */
+    /* Move the top down to the next element */
     stack->top = node_to_remove->next;
 
-    /* Przekazanie danych albo wywołanie destruktora */
+    /* Hand the data over or invoke the destructor */
     if (out_data != NULL) {
-        *out_data = data; /* Użytkownik przejmuje obiekt */
+        *out_data = data; /* The caller takes ownership of the object */
     } else {
-        /* Użytkownik ignoruje wynik (NULL), więc niszczymy zasób */
+        /* The caller ignored the result (NULL), so destroy the resource */
         if (stack->destructor && data) {
             stack->destructor(data);
         }
     }
 
-    /* Zwrócenie węzła do recyklingu */
+    /* Return the node to the recycling pool */
     free_node(stack, node_to_remove);
     stack->size--;
 
@@ -168,11 +168,11 @@ int stack_foreach(stack_t* stack, object_job_function_t job, void* argstruct) {
         return STACK_ERR;
     }
 
-    /* Iteracja zaczyna się od wierzchołka i schodzi "w dół" stosu */
+    /* Iteration starts at the top and walks down the stack */
     stack_node_t* current = stack->top;
     while (current) {
         if (job(current->data, argstruct) != 0) {
-            break; /* Przerwanie iteracji przez użytkownika */
+            break; /* Iteration stopped by the caller */
         }
         current = current->next;
     }
