@@ -1,11 +1,9 @@
 #ifndef C_COLLECTIONS_BST_TRAVERSALS_H
 #define C_COLLECTIONS_BST_TRAVERSALS_H
 
-#ifdef __cplusplus
-extern "C" {
-
-
-#endif
+/* Optional add-on for the core BST module: include this header only
+ * when the traversal algorithms are needed. */
+#include "bst.h"
 
 /* Enum for traversal orders */
 typedef enum {
@@ -21,8 +19,9 @@ typedef enum {
 /* Function pointer type for operations applied to each node */
 typedef int (*object_job_function_t)(void *obj, void *argstruct);
 
-/* Forward declaration of the opaque BST type */
-typedef struct bst bst_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Traverses the BST using the specified traversal order.

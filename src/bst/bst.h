@@ -6,11 +6,11 @@
 #define C_COLLECTIONS_BST_H
 
 #include <stddef.h>
-#include "bst_traversals.h"
+#include "../collections_errors.h"
 
-/* Return Codes */
-#define BST_OK   0
-#define BST_ERR (-1)
+/* Return codes */
+#define BST_OK  COLLECTIONS_OK
+#define BST_ERR COLLECTIONS_ERR
 
 /* Comparator Macros */
 #define BST_LEQ  (-2)
@@ -33,13 +33,10 @@ int bst_cmp_unsigned_int(void *a, void *b);
 
 /* Opaque pointer definitions */
 typedef struct bst_node bst_node_t;
-/* bst_t is already forward-declared in bst_traversals.h */
+typedef struct bst bst_t;
 
 #ifdef __cplusplus
 extern "C" {
-
-
-
 #endif
 
 /**

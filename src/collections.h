@@ -6,8 +6,9 @@
 #define C_COLLECTIONS_COLLECTIONS_H
 
 #include "bst/bst.h"
+#include "bst/bst_traversals.h"
+#include "list/list.h"
 #include "queue/queue.h"
-#include "slist/slist.h"
 #include "stack/stack.h"
 
 #endif // C_COLLECTIONS_COLLECTIONS_H

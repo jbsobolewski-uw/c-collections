@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <stddef.h>
 
-/* --- Algorytmy DFS (Depth-First Search) --- */
+/* --- DFS algorithms (Depth-First Search) --- */
 static int traverse_recursive(bst_node_t *node, bst_traversal_t order, object_job_function_t job, void *argstruct) {
     if (!node) return 0;
 
@@ -60,13 +60,13 @@ static int traverse_recursive(bst_node_t *node, bst_traversal_t order, object_jo
     return res;
 }
 
-/* --- Algorytm BFS (Breadth-First Search / Level-Order) --- */
+/* --- BFS algorithm (Breadth-First Search / Level-Order) --- */
 static int traverse_bfs(bst_node_t *root, object_job_function_t job, void *argstruct) {
     if (!root) return 0;
 
-    /* Tworzymy kolejkę bez destruktora, bo węzły należą do drzewa, nie do kolejki */
+    /* Create the queue without a destructor: the nodes belong to the tree, not to the queue */
     queue_t *q = queue_create(NULL);
-    if (!q) return BST_ERR; /* errno ustawione przez queue_create (ENOMEM) */
+    if (!q) return BST_ERR; /* errno set by queue_create (ENOMEM) */
 
     if (queue_enqueue(q, root) != QUEUE_OK) {
         queue_destroy(q);
@@ -76,7 +76,7 @@ static int traverse_bfs(bst_node_t *root, object_job_function_t job, void *argst
     int is_empty = 0;
     int res = 0;
 
-    /* Wykonuj dopóki kolejka nie jest pusta */
+    /* Run until the queue is empty */
     while (queue_is_empty(q, &is_empty) == QUEUE_OK && !is_empty) {
         bst_node_t *current_node = NULL;
 
@@ -85,13 +85,13 @@ static int traverse_bfs(bst_node_t *root, object_job_function_t job, void *argst
             break;
         }
 
-        /* Wywołujemy funkcję użytkownika na danych węzła */
+        /* Invoke the user function on the node's data */
         void *user_data = bst_node_get_data(current_node);
         if ((res = job(user_data, argstruct)) != 0) {
-            break; /* Użytkownik przerwał iterację */
+            break; /* Iteration stopped by the caller */
         }
 
-        /* Dodajemy dzieci zdezdekodowanego węzła do kolejki (lewe, potem prawe) */
+        /* Enqueue the children of the dequeued node (left first, then right) */
         bst_node_t *left = bst_node_get_left(current_node);
         if (left) {
             if (queue_enqueue(q, left) != QUEUE_OK) {
@@ -109,20 +109,35 @@ static int traverse_bfs(bst_node_t *root, object_job_function_t job, void *argst
         }
     }
 
-    queue_destroy(q); /* Zwalniamy zasoby kolejki (tylko jej wewnętrzne węzły) */
+    queue_destroy(q); /* Release the queue's resources (only its internal nodes) */
     return res;
 }
 
-/* --- Główna funkcja API --- */
+/* --- Main API function --- */
 int bst_apply(bst_t *tree, bst_traversal_t order, object_job_function_t job, void *argstruct) {
     if (!tree || !job) {
         errno = EINVAL;
         return BST_ERR;
     }
 
+    switch (order) {
+        case BST_TRAVERSAL_NLR:
+        case BST_TRAVERSAL_LNR:
+        case BST_TRAVERSAL_LRN:
+        case BST_TRAVERSAL_NRL:
+        case BST_TRAVERSAL_RNL:
+        case BST_TRAVERSAL_RLN:
+        case BST_TRAVERSAL_BFS:
+            break;
+        default:
+            /* Unknown traversal order */
+            errno = EINVAL;
+            return BST_ERR;
+    }
+
     bst_node_t *root = bst_get_root(tree);
     if (!root) {
-        return BST_OK; /* Puste drzewo, nic do zrobienia */
+        return BST_OK; /* Empty tree, nothing to do */
     }
 
     if (order == BST_TRAVERSAL_BFS) {
