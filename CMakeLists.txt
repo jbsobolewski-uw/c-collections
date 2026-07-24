@@ -22,3 +22,6 @@ include(${PROJECT_SOURCE_DIR}/src/linkerflags.cmake)
 
 include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(src)
+
+enable_testing()
+add_subdirectory(test)
