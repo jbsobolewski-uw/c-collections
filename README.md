@@ -41,4 +41,4 @@ test/           tests
 
 ## License
 
-See [LICENSE](LICENSE).
+See [LICENSE.md](LICENSE.md).
