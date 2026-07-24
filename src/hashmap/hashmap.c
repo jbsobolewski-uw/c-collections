@@ -35,6 +35,7 @@ struct HashMap {
     size_t capacity; /**< Total number of allocated slots in the entries array. */
     size_t size; /**< Current number of elements stored in the hash map. */
     hm_object_destroyer_func_t *object_destroyer; /**< Function pointer used to free stored values. Can be NULL. */
+    unsigned flags; /**< Behaviour flags passed to hm_create (HASHMAP_*). */
 };
 
 /**
@@ -57,9 +58,11 @@ static uint32_t hash_uint32(uint32_t x) {
  * The initial capacity is bounded by MIN_INITIAL_CAPACITY.
  * * @param capacity The desired initial capacity of the hash map.
  * @param object_destroyer A function pointer to handle freeing stored values. Pass NULL if not needed.
+ * @param flags Bitwise OR of HASHMAP_* behaviour flags, or 0 for defaults.
  * @return A pointer to the newly created hash map, or NULL if memory allocation fails.
  */
-hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *object_destroyer) {
+hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *object_destroyer,
+                      unsigned flags) {
     hash_map_t *map = malloc(sizeof(hash_map_t));
     if (!map) {
         errno = ENOMEM;
@@ -70,6 +73,7 @@ hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *object_destro
     map->size = 0;
     map->entries = calloc(map->capacity, sizeof(hash_entry_t));
     map->object_destroyer = object_destroyer;
+    map->flags = flags;
 
     if (!map->entries) {
         free(map);
@@ -104,7 +108,7 @@ static size_t hm_find_slot(hash_map_t *map, uint32_t key) {
 
 /**
  * @brief Places a key-value pair into the table without any resizing logic.
- * * Shared by hm_insert, hm_resize and the cluster rehashing in hm_remove.
+ * * Shared by hm_insert, hm_rehash and the cluster rehashing in hm_remove.
  * If the key already exists, the old value is destroyed (when an
  * object_destroyer is set) and replaced.
  * * @param map Pointer to the hash map.
@@ -123,22 +127,24 @@ static void hm_place(hash_map_t *map, uint32_t key, void *value) {
 }
 
 /**
- * @brief Doubles the capacity of the hash map and rehashes all existing entries.
- * * Called automatically during insertion when the load factor exceeds 3/4.
+ * @brief Rehashes all existing entries into a table of the given capacity.
+ * * Used for growing (load factor above 3/4) and, with HASHMAP_AUTO_SHRINK,
+ * for shrinking (load factor at or below 1/4).
  * * @param map Pointer to the hash map to resize.
+ * @param new_capacity The desired capacity; must be able to hold all entries.
  * @return true on success, false if the new table could not be allocated
  * (the map is left unchanged in that case).
  */
-static bool hm_resize(hash_map_t *map) {
+static bool hm_rehash(hash_map_t *map, size_t new_capacity) {
     size_t old_capacity = map->capacity;
     hash_entry_t *old_entries = map->entries;
 
-    hash_entry_t *new_entries = calloc(old_capacity * 2, sizeof(hash_entry_t));
+    hash_entry_t *new_entries = calloc(new_capacity, sizeof(hash_entry_t));
     if (!new_entries) {
         return false;
     }
 
-    map->capacity = old_capacity * 2;
+    map->capacity = new_capacity;
     map->entries = new_entries;
     map->size = 0;
 
@@ -170,7 +176,7 @@ int hm_insert(hash_map_t *map, uint32_t key, void *value) {
     }
 
     if (map->size >= (map->capacity * 3) / 4) {
-        if (!hm_resize(map) && map->size >= map->capacity) {
+        if (!hm_rehash(map, map->capacity * 2) && map->size >= map->capacity) {
             /* No free slot left and the table cannot grow */
             errno = ENOMEM;
             return HASHMAP_ERR;
@@ -263,6 +269,17 @@ int hm_remove(hash_map_t *map, uint32_t key) {
         map->size--;
 
         hm_place(map, k, v);
+    }
+
+    /* With HASHMAP_AUTO_SHRINK, halve the table once the load factor drops
+     * to 1/4 (growth triggers at 3/4, so the two thresholds cannot thrash).
+     * A failed shrink allocation is tolerated: the table simply stays big. */
+    if ((map->flags & HASHMAP_AUTO_SHRINK) &&
+        map->capacity > MIN_INITIAL_CAPACITY &&
+        map->size <= map->capacity / 4) {
+        size_t target = map->capacity / 2;
+        if (target < MIN_INITIAL_CAPACITY) target = MIN_INITIAL_CAPACITY;
+        hm_rehash(map, target);
     }
 
     return HASHMAP_OK;

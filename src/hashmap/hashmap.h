@@ -14,6 +14,9 @@
 #define HASHMAP_OK  COLLECTIONS_OK
 #define HASHMAP_ERR COLLECTIONS_ERR
 
+/* Behaviour flags for hm_create */
+#define HASHMAP_AUTO_SHRINK 0x1u
+
 /**
  * 32-bit hashmap object
  */
@@ -30,9 +33,13 @@ typedef void (hm_object_destroyer_func_t)(void *value);
  * Creates a hashmap instance.
  * @param capacity Starting capacity (raised to MIN_INITIAL_CAPACITY if smaller).
  * @param destroyer Object destroyer function (can be NULL).
+ * @param flags Bitwise OR of behaviour flags, or 0 for defaults.
+ * With HASHMAP_AUTO_SHRINK the table halves its capacity when removals
+ * bring the load factor down to 1/4 (never below the minimum capacity).
  * @return Pointer to the new hashmap, or NULL on error (sets errno = ENOMEM).
  */
-hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *destroyer);
+hash_map_t *hm_create(size_t capacity, hm_object_destroyer_func_t *destroyer,
+                      unsigned flags);
 
 /**
  * Inserts or updates the key-value pair.

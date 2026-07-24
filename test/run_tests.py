@@ -24,7 +24,7 @@ SUITE = {
     "stack": ["api", "edge", "ownership", "stress", "memory"],
     "bst": ["api", "edge", "ownership", "stress", "memory"],
     "bst_traversals": ["orders", "early_stop", "edge", "bfs", "memory"],
-    "hashmap": ["api", "edge", "ownership", "collisions", "growth", "memory"],
+    "hashmap": ["api", "edge", "ownership", "collisions", "growth", "shrink", "memory"],
     "id_manager": ["api", "edge", "recycling", "exhaustion", "memory"],
 }
 
