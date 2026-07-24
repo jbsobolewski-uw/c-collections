@@ -6,16 +6,17 @@
 #define C_COLLECTIONS_STACK_H
 
 #include <stddef.h>
+#include "../collections_errors.h"
 
-/* Kody powrotu */
-#define STACK_OK  0
-#define STACK_ERR (-1)
+/* Return codes */
+#define STACK_OK  COLLECTIONS_OK
+#define STACK_ERR COLLECTIONS_ERR
 
-/* Typy wskaźników na funkcje */
+/* Function pointer types */
 typedef void (*object_destructor_function_t)(void*);
 typedef int (*object_job_function_t)(void* obj, void* argstruct);
 
-/* Opaque pointer - ukryta struktura stosu */
+/* Opaque pointer - the stack structure is hidden */
 typedef struct stack stack_t;
 
 #ifdef __cplusplus
@@ -23,58 +24,58 @@ extern "C" {
 #endif
 
 /**
- * @brief Tworzy nowy stos.
- * @param dtor Funkcja czyszcząca elementy stosu w przypadku jego zniszczenia. Może być NULL.
- * @return Wskaźnik na nowy stos lub NULL w przypadku błędu (ustawia errno = ENOMEM).
+ * @brief Creates a new stack.
+ * @param dtor Function used to clean up stack elements when the stack is destroyed. Can be NULL.
+ * @return Pointer to the new stack, or NULL on error (sets errno = ENOMEM).
  */
 stack_t* stack_create(object_destructor_function_t dtor);
 
 /**
- * @brief Niszczy stos, wywołując destruktory dla elementów pozostających na stosie i zwalniając pamięć.
- * @param stack Wskaźnik na stos.
- * @return STACK_OK lub STACK_ERR (ustawia errno).
+ * @brief Destroys the stack, invoking the destructor on the remaining elements and freeing memory.
+ * @param stack Pointer to the stack.
+ * @return STACK_OK or STACK_ERR (sets errno).
  */
 int stack_destroy(stack_t* stack);
 
 /**
- * @brief Odkłada nowy element na wierzchołek stosu (Push).
- * @param stack Wskaźnik na stos.
- * @param data Wskaźnik na dane.
- * @return STACK_OK lub STACK_ERR (ustawia errno).
+ * @brief Pushes a new element onto the top of the stack.
+ * @param stack Pointer to the stack.
+ * @param data Pointer to the data.
+ * @return STACK_OK or STACK_ERR (sets errno).
  */
 int stack_push(stack_t* stack, void* data);
 
 /**
- * @brief Zdejmuje element z wierzchołka stosu (Pop).
- * @param stack Wskaźnik na stos.
- * @param out_data Miejsce na zapisanie wskaźnika do zdjętych danych.
- * Jeśli podano NULL, dane są niszczone za pomocą destruktora.
- * @return STACK_OK lub STACK_ERR (ustawia errno = ENOENT jeśli stos jest pusty).
+ * @brief Pops the element off the top of the stack.
+ * @param stack Pointer to the stack.
+ * @param out_data Location where the pointer to the popped data is stored.
+ * If NULL is passed, the data is destroyed using the destructor.
+ * @return STACK_OK or STACK_ERR (sets errno = ENOENT if the stack is empty).
  */
 int stack_pop(stack_t* stack, void** out_data);
 
 /**
- * @brief Zwraca rozmiar stosu (ilość elementów) poprzez parametr wyjściowy.
- * @param stack Wskaźnik na stos.
- * @param out_size Wskaźnik, pod którym zapisany zostanie rozmiar.
- * @return STACK_OK lub STACK_ERR (ustawia errno).
+ * @brief Returns the stack size (number of elements) via an output parameter.
+ * @param stack Pointer to the stack.
+ * @param out_size Pointer where the size will be stored.
+ * @return STACK_OK or STACK_ERR (sets errno).
  */
 int stack_size(stack_t* stack, size_t* out_size);
 
 /**
- * @brief Sprawdza, czy stos jest pusty poprzez parametr wyjściowy.
- * @param stack Wskaźnik na stos.
- * @param out_is_empty 1 jeśli pusty, 0 jeśli nie.
- * @return STACK_OK lub STACK_ERR (ustawia errno).
+ * @brief Checks whether the stack is empty via an output parameter.
+ * @param stack Pointer to the stack.
+ * @param out_is_empty 1 if empty, 0 otherwise.
+ * @return STACK_OK or STACK_ERR (sets errno).
  */
 int stack_is_empty(stack_t* stack, int* out_is_empty);
 
 /**
- * @brief Iteruje po wszystkich elementach stosu (od wierzchołka do dna).
- * @param stack Wskaźnik na stos.
- * @param job Funkcja do wykonania na każdym elemencie (zwrócenie != 0 przerywa iterację).
- * @param argstruct Dodatkowy argument przekazywany do funkcji job.
- * @return STACK_OK lub STACK_ERR (ustawia errno).
+ * @brief Iterates over all stack elements (from the top down to the bottom).
+ * @param stack Pointer to the stack.
+ * @param job Function invoked on every element (a non-zero return value stops the iteration).
+ * @param argstruct Extra argument passed to the job function.
+ * @return STACK_OK or STACK_ERR (sets errno).
  */
 int stack_foreach(stack_t* stack, object_job_function_t job, void* argstruct);
 
