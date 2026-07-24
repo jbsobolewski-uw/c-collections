@@ -15,9 +15,9 @@
 /* Comparator Macros */
 #define BST_LEQ  (-2)
 #define BST_LE   (-1)
-#define BST_EQ    0
-#define BST_GR    1
-#define BST_GREQ  2
+#define BST_EQ   0
+#define BST_GR   1
+#define BST_GREQ 2
 
 /* Function pointer types */
 typedef void (*object_destructor_function_t)(void *);
@@ -33,7 +33,7 @@ int bst_cmp_unsigned_int(void *a, void *b);
 
 /* Opaque pointer definitions */
 typedef struct bst_node bst_node_t;
-typedef struct bst bst_t;
+typedef struct bst      bst_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,8 @@ extern "C" {
  * @param dtor Destructor for freeing objects. Can be NULL.
  * @return Pointer to new BST, or NULL on error.
  */
-bst_t *bst_create(object_comparator_function_t cmp, object_destructor_function_t dtor);
+bst_t *bst_create(object_comparator_function_t cmp,
+                  object_destructor_function_t dtor);
 
 /**
  * @brief Destroys the tree, invoking the destructor on all remaining items.

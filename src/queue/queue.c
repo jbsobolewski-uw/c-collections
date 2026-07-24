@@ -8,15 +8,15 @@
 
 /* Internal node structure */
 typedef struct queue_node {
-    void *data;
+    void              *data;
     struct queue_node *next;
 } queue_node_t;
 
 /* Internal queue structure */
 struct queue {
-    queue_node_t *head; /* Front of the queue (for removal) */
-    queue_node_t *tail; /* Back of the queue (for insertion) */
-    size_t size;
+    queue_node_t                *head; /* Front of the queue (for removal) */
+    queue_node_t                *tail; /* Back of the queue (for insertion) */
+    size_t                       size;
     object_destructor_function_t destructor;
 
     /* Pool of recycled nodes (free list) */
@@ -28,16 +28,18 @@ struct queue {
 static queue_node_t *allocate_node(queue_t *q) {
     if (q->recycled_nodes != NULL) {
         queue_node_t *node = q->recycled_nodes;
-        q->recycled_nodes = node->next;
+        q->recycled_nodes  = node->next;
         return node;
     }
     return (queue_node_t *) malloc(sizeof(queue_node_t));
 }
 
+
 static void free_node(queue_t *q, queue_node_t *node) {
-    node->next = q->recycled_nodes;
+    node->next        = q->recycled_nodes;
     q->recycled_nodes = node;
 }
+
 
 /* --- API implementation --- */
 
@@ -48,14 +50,15 @@ queue_t *queue_create(object_destructor_function_t dtor) {
         return NULL;
     }
 
-    q->head = NULL;
-    q->tail = NULL;
-    q->size = 0;
-    q->destructor = dtor;
+    q->head           = NULL;
+    q->tail           = NULL;
+    q->size           = 0;
+    q->destructor     = dtor;
     q->recycled_nodes = NULL;
 
     return q;
 }
+
 
 int queue_destroy(queue_t *q) {
     if (!q) {
@@ -67,9 +70,7 @@ int queue_destroy(queue_t *q) {
     queue_node_t *current = q->head;
     while (current) {
         queue_node_t *next = current->next;
-        if (q->destructor && current->data) {
-            q->destructor(current->data);
-        }
+        if (q->destructor && current->data) q->destructor(current->data);
         free(current); /* Final release */
         current = next;
     }
@@ -87,6 +88,7 @@ int queue_destroy(queue_t *q) {
 
     return QUEUE_OK;
 }
+
 
 int queue_enqueue(queue_t *q, void *data) {
     if (!q) {
@@ -118,6 +120,7 @@ int queue_enqueue(queue_t *q, void *data) {
     return QUEUE_OK;
 }
 
+
 int queue_dequeue(queue_t *q, void **out_data) {
     if (!q) {
         errno = EINVAL;
@@ -131,24 +134,20 @@ int queue_dequeue(queue_t *q, void **out_data) {
     }
 
     queue_node_t *node_to_remove = q->head;
-    void *data = node_to_remove->data;
+    void         *data           = node_to_remove->data;
 
     /* Move the head to the next element */
     q->head = node_to_remove->next;
 
     /* If the last element was removed, the tail must be reset too */
-    if (q->head == NULL) {
-        q->tail = NULL;
-    }
+    if (q->head == NULL) q->tail = NULL;
 
     /* Hand the data over or invoke the destructor */
     if (out_data != NULL) {
         *out_data = data; /* The caller takes ownership of the object */
     } else {
         /* The caller skipped the pickup, so destroy the resource permanently */
-        if (q->destructor && data) {
-            q->destructor(data);
-        }
+        if (q->destructor && data) q->destructor(data);
     }
 
     /* The node goes back to the recycling pool */
@@ -157,6 +156,7 @@ int queue_dequeue(queue_t *q, void **out_data) {
 
     return QUEUE_OK;
 }
+
 
 int queue_size(queue_t *q, size_t *out_size) {
     if (!q || !out_size) {
@@ -168,6 +168,7 @@ int queue_size(queue_t *q, size_t *out_size) {
     return QUEUE_OK;
 }
 
+
 int queue_is_empty(queue_t *q, int *out_is_empty) {
     if (!q || !out_is_empty) {
         errno = EINVAL;
@@ -178,6 +179,7 @@ int queue_is_empty(queue_t *q, int *out_is_empty) {
     return QUEUE_OK;
 }
 
+
 int queue_foreach(queue_t *q, object_job_function_t job, void *argstruct) {
     if (!q || !job) {
         errno = EINVAL;
@@ -186,9 +188,8 @@ int queue_foreach(queue_t *q, object_job_function_t job, void *argstruct) {
 
     queue_node_t *current = q->head;
     while (current) {
-        if (job(current->data, argstruct) != 0) {
+        if (job(current->data, argstruct) != 0)
             break; /* Iteration stopped by the caller */
-        }
         current = current->next;
     }
 

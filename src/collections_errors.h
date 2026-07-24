@@ -17,12 +17,13 @@
  *  - All other fallible operations return COLLECTIONS_OK or COLLECTIONS_ERR.
  *  - Query results are delivered through output parameters.
  *  - On failure errno is always set to describe the cause:
- *      EINVAL - invalid argument (NULL handle, bad output pointer, invalid enum value)
+ *      EINVAL - invalid argument (NULL handle, bad output pointer,
+ *               invalid enum value)
  *      ENOMEM - memory allocation failed
- *      ENOENT - element not found, or container is empty
- *      ENOSPC - resource exhausted (e.g. no identifiers left to assign)
+ *      ENOENT - element not found, or the container is empty
+ *      ENOSPC - resource exhausted (no identifiers left to assign)
  */
-#define COLLECTIONS_OK    0
+#define COLLECTIONS_OK  0
 #define COLLECTIONS_ERR (-1)
 
 #endif // C_COLLECTIONS_ERRORS_H

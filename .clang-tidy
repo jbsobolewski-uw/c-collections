@@ -1,11 +1,25 @@
 ---
 # clang-tidy configuration (style/formatting rules live in .clang-format).
+#
+# readability-misleading-indentation is essential with the project's
+# braceless single-statement style: it catches statements that look like
+# they belong to an if/loop body but do not.
+# readability-braces-around-statements is deliberately NOT enabled - it
+# would fight the braceless style.
 Checks: >
   clang-analyzer-*,
   bugprone-*,
   performance-*,
   portability-*,
-  -bugprone-easily-swappable-parameters
+  misc-*,
+  readability-misleading-indentation,
+  readability-duplicate-include,
+  readability-inconsistent-declaration-parameter-name,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-simplify-boolean-expr,
+  -bugprone-easily-swappable-parameters,
+  -misc-no-recursion
 WarningsAsErrors: ''
 HeaderFilterRegex: 'src/.*'
 FormatStyle: file

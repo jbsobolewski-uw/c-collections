@@ -13,7 +13,7 @@ typedef enum {
     BST_TRAVERSAL_NRL, /* Reverse Pre-order: Node, Right, Left (DFS) */
     BST_TRAVERSAL_RNL, /* Reverse In-order: Right, Node, Left (DFS) */
     BST_TRAVERSAL_RLN, /* Reverse Post-order: Right, Left, Node (DFS) */
-    BST_TRAVERSAL_BFS /* Level-order: Breadth-First Search */
+    BST_TRAVERSAL_BFS  /* Level-order: Breadth-First Search */
 } bst_traversal_t;
 
 /* Function pointer type for operations applied to each node */
@@ -26,12 +26,14 @@ extern "C" {
 /**
  * @brief Traverses the BST using the specified traversal order.
  * @param tree Pointer to the tree.
- * @param order Enum indicating the traversal type (e.g., BST_TRAVERSAL_LNR or BST_TRAVERSAL_BFS).
+ * @param order Enum indicating the traversal type (e.g., BST_TRAVERSAL_LNR or
+ * BST_TRAVERSAL_BFS).
  * @param job Function applied to each object. Returns non-zero to break.
  * @param argstruct Additional argument passed to the job function.
  * @return BST_OK or BST_ERR (sets errno).
  */
-int bst_apply(bst_t *tree, bst_traversal_t order, object_job_function_t job, void *argstruct);
+int bst_apply(bst_t *tree, bst_traversal_t order, object_job_function_t job,
+              void *argstruct);
 
 #ifdef __cplusplus
 }

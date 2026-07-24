@@ -25,7 +25,8 @@ id_manager_t *idm_create(uint32_t first_id);
 
 
 // IdManager destructor.
-// Returns ID_MANAGER_OK, or ID_MANAGER_ERR (sets errno = EINVAL) when mgr is NULL.
+// Returns ID_MANAGER_OK, or ID_MANAGER_ERR (sets errno = EINVAL) when mgr is
+// NULL.
 int idm_destroy(id_manager_t *mgr);
 
 
@@ -48,4 +49,4 @@ int idm_release_id(id_manager_t *mgr, uint32_t id);
 int idm_is_available(id_manager_t *mgr);
 
 
-#endif //C_COLLECTIONS_ID_MANAGER_H
+#endif // C_COLLECTIONS_ID_MANAGER_H

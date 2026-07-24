@@ -15,7 +15,8 @@
 /* Function pointer types for the destructor and foreach operations */
 typedef void (*object_destructor_function_t)(void *);
 
-/* A foreach job should return 0 to continue, or non-zero to stop the iteration */
+/* A foreach job should return 0 to continue, or non-zero to stop the iteration
+ */
 typedef int (*object_job_function_t)(void *obj, void *argstruct);
 
 /* Opaque pointer - the list structure is hidden */
@@ -33,7 +34,8 @@ extern "C" {
 list_t *list_create(object_destructor_function_t dtor);
 
 /**
- * @brief Destroys the list, invoking the destructor on the remaining elements and freeing memory.
+ * @brief Destroys the list, invoking the destructor on the remaining elements
+ * and freeing memory.
  * @param list Pointer to the list.
  * @return LIST_OK or LIST_ERR (sets errno).
  */
@@ -48,7 +50,8 @@ int list_destroy(list_t *list);
 int list_add(list_t *list, void *data);
 
 /**
- * @brief Removes the first occurrence of an element from the list, invoking its destructor.
+ * @brief Removes the first occurrence of an element from the list, invoking its
+ * destructor.
  * @param list Pointer to the list.
  * @param data Pointer to the data to remove.
  * @return LIST_OK or LIST_ERR (sets errno = ENOENT when not found).
@@ -72,7 +75,8 @@ int list_size(list_t *list, size_t *out_size);
 int list_is_empty(list_t *list, int *out_is_empty);
 
 /**
- * @brief Iterates over all list elements. Iteration stops when job() returns a non-zero value.
+ * @brief Iterates over all list elements. Iteration stops when job() returns a
+ * non-zero value.
  * @param list Pointer to the list.
  * @param job Function invoked on every element.
  * @param argstruct Extra argument passed to the job function.
@@ -84,4 +88,4 @@ int list_foreach(list_t *list, object_job_function_t job, void *argstruct);
 }
 #endif
 
-#endif //C_COLLECTIONS_LIST_H
+#endif // C_COLLECTIONS_LIST_H

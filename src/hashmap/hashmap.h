@@ -26,12 +26,13 @@ typedef struct HashMap hash_map_t;
 /**
  * Object destroyer function type declaration
  */
-typedef void (hm_object_destroyer_func_t)(void *value);
+typedef void(hm_object_destroyer_func_t)(void *value);
 
 
 /**
  * Creates a hashmap instance.
- * @param capacity Starting capacity (raised to MIN_INITIAL_CAPACITY if smaller).
+ * @param capacity Starting capacity (raised to MIN_INITIAL_CAPACITY if
+ * smaller).
  * @param destroyer Object destroyer function (can be NULL).
  * @param flags Bitwise OR of behaviour flags, or 0 for defaults.
  * With HASHMAP_AUTO_SHRINK the table halves its capacity when removals
@@ -79,4 +80,4 @@ int hm_destroy(hash_map_t *map);
 int hm_size(hash_map_t *map, size_t *out_size);
 
 
-#endif //C_COLLECTIONS_HASHMAP_H
+#endif // C_COLLECTIONS_HASHMAP_H

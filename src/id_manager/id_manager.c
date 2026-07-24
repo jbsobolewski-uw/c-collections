@@ -14,7 +14,8 @@
  */
 typedef struct id_node {
     uint32_t id; /**< The 32-bit identifier stored in this node. */
-    struct id_node *next; /**< Pointer to the next node in the stack or node pool. */
+    struct id_node
+            *next; /**< Pointer to the next node in the stack or node pool. */
 } id_node_t;
 
 /**
@@ -25,11 +26,14 @@ typedef struct id_node {
  * calls and preventing latency spikes typical of realloc-based dynamic arrays.
  */
 struct IdManager {
-    uint32_t min_id; /**< The lowest valid ID that can be assigned. */
-    uint32_t next_id; /**< The next contiguous new ID to be issued. */
-    id_node_t *recycled_ids; /**< Linked stack of released IDs waiting to be reused. */
-    id_node_t *node_pool; /**< Linked stack of empty nodes ready for reuse (avoids malloc). */
-    int exhausted; /**< Flag indicating if the sequence of new IDs has reached UINT32_MAX. */
+    uint32_t   min_id;       /**< The lowest valid ID that can be assigned. */
+    uint32_t   next_id;      /**< The next contiguous new ID to be issued. */
+    id_node_t *recycled_ids; /**< Linked stack of released IDs waiting to be
+                                reused. */
+    id_node_t *node_pool;    /**< Linked stack of empty nodes ready for reuse
+                                (avoids malloc). */
+    int exhausted; /**< Flag indicating if the sequence of new IDs has reached
+                      UINT32_MAX. */
 };
 
 /**
@@ -47,21 +51,23 @@ id_manager_t *idm_create(uint32_t first_id) {
         return NULL;
     }
 
-    mgr->min_id = first_id;
-    mgr->next_id = first_id;
+    mgr->min_id       = first_id;
+    mgr->next_id      = first_id;
     mgr->recycled_ids = NULL;
-    mgr->node_pool = NULL;
-    mgr->exhausted = 0;
+    mgr->node_pool    = NULL;
+    mgr->exhausted    = 0;
 
     return mgr;
 }
+
 
 /**
  * @brief Destroys the ID manager and frees its associated memory.
  * * Iterates through both the stack of active recycled IDs and the pool
  * of spare nodes, safely freeing them all to prevent memory leaks.
  * * @param mgr Pointer to the ID manager to destroy.
- * @return ID_MANAGER_OK, or ID_MANAGER_ERR (sets errno = EINVAL) when mgr is NULL.
+ * @return ID_MANAGER_OK, or ID_MANAGER_ERR (sets errno = EINVAL) when mgr is
+ * NULL.
  */
 int idm_destroy(id_manager_t *mgr) {
     if (!mgr) {
@@ -89,6 +95,7 @@ int idm_destroy(id_manager_t *mgr) {
     return ID_MANAGER_OK;
 }
 
+
 /**
  * @brief Acquires a unique ID from the manager.
  * * Time complexity: O(1).
@@ -108,13 +115,13 @@ uint32_t idm_assign_id(id_manager_t *mgr) {
 
     // 1. Try to take an ID from the recycled stack
     if (mgr->recycled_ids) {
-        id_node_t *node = mgr->recycled_ids;
+        id_node_t *node   = mgr->recycled_ids;
         mgr->recycled_ids = node->next; // Pop from active stack
 
         uint32_t id = node->id;
 
         // 0 allocations: Instead of freeing, move the empty node to the pool
-        node->next = mgr->node_pool;
+        node->next     = mgr->node_pool;
         mgr->node_pool = node;
 
         return id;
@@ -128,21 +135,19 @@ uint32_t idm_assign_id(id_manager_t *mgr) {
 
     uint32_t id = mgr->next_id;
 
-    if (mgr->next_id == UINT32_MAX) {
-        mgr->exhausted = 1;
-    } else {
-        mgr->next_id++;
-    }
+    if (mgr->next_id == UINT32_MAX) mgr->exhausted = 1;
+    else mgr->next_id++;
 
     return id;
 }
+
 
 /**
  * @brief Releases a previously acquired ID back to the manager.
  * * Time complexity: O(1).
  * Recycles the ID. First checks if it can simply decrement the main counter
- * (optimization). Otherwise, it attempts to grab a spare node from the `node_pool`.
- * It only calls `malloc` if the pool is entirely empty.
+ * (optimization). Otherwise, it attempts to grab a spare node from the
+ * `node_pool`. It only calls `malloc` if the pool is entirely empty.
  * * @param mgr Pointer to the ID manager.
  * @param id The ID to release.
  * @return ID_MANAGER_OK on success, or ID_MANAGER_ERR (sets errno) if mgr is
@@ -170,7 +175,7 @@ int idm_release_id(id_manager_t *mgr, uint32_t id) {
 
     // 1. Attempt to recycle an empty node from the pool (0 allocations!)
     if (mgr->node_pool) {
-        new_node = mgr->node_pool;
+        new_node       = mgr->node_pool;
         mgr->node_pool = new_node->next;
     }
     // 2. Fallback: if the pool is empty, allocate a new node
@@ -183,12 +188,13 @@ int idm_release_id(id_manager_t *mgr, uint32_t id) {
     }
 
     // Push the released ID onto the active recycled_ids stack
-    new_node->id = id;
-    new_node->next = mgr->recycled_ids;
+    new_node->id      = id;
+    new_node->next    = mgr->recycled_ids;
     mgr->recycled_ids = new_node;
 
     return ID_MANAGER_OK;
 }
+
 
 /**
  * @brief Checks if there are any IDs currently available.
