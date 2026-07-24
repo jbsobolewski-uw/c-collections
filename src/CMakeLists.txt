@@ -1,6 +1,3 @@
-include(${CMAKE_CURRENT_SOURCE_DIR}/compilerflags.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/linkerflags.cmake)
-
 # Defines <name> (static, lib<name>.a) and <name>_shared (dynamic,
 # lib<name>.so) built from a single set of object files.
 function(add_collection_library name)

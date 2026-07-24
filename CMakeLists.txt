@@ -13,7 +13,12 @@ if (CLANG_TIDY_EXE)
             "--extra-arg=-Wno-unknown-warning-option")
 endif ()
 
-# Compiler and linker flags are maintained in src/compilerflags.cmake
-# and src/linkerflags.cmake, included by src/CMakeLists.txt.
+# Compiler and linker flags are maintained in src/compilerflags.cmake and
+# src/linkerflags.cmake. They must be included here, at the top level, so
+# that they apply to every directory (src and test alike) - add_compile_options
+# and add_link_options are directory-scoped.
+include(${PROJECT_SOURCE_DIR}/src/compilerflags.cmake)
+include(${PROJECT_SOURCE_DIR}/src/linkerflags.cmake)
+
 include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(src)
