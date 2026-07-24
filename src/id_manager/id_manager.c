@@ -4,7 +4,7 @@
 
 #include "id_manager.h"
 
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 
 /**
@@ -37,11 +37,15 @@ struct IdManager {
  * * Allocates memory for the manager structure. The linked stacks are initially
  * empty (NULL). Memory for nodes will be allocated lazily upon ID release.
  * * @param first_id The lowest ID number that this manager will issue.
- * @return A pointer to the newly created ID manager, or NULL if memory allocation fails.
+ * @return A pointer to the newly created ID manager, or NULL if memory
+ * allocation fails (sets errno = ENOMEM).
  */
 id_manager_t *idm_create(uint32_t first_id) {
     id_manager_t *mgr = malloc(sizeof(id_manager_t));
-    if (!mgr) return NULL;
+    if (!mgr) {
+        errno = ENOMEM;
+        return NULL;
+    }
 
     mgr->min_id = first_id;
     mgr->next_id = first_id;
@@ -57,9 +61,13 @@ id_manager_t *idm_create(uint32_t first_id) {
  * * Iterates through both the stack of active recycled IDs and the pool
  * of spare nodes, safely freeing them all to prevent memory leaks.
  * * @param mgr Pointer to the ID manager to destroy.
+ * @return ID_MANAGER_OK, or ID_MANAGER_ERR (sets errno = EINVAL) when mgr is NULL.
  */
-void idm_destroy(id_manager_t *mgr) {
-    if (!mgr) return;
+int idm_destroy(id_manager_t *mgr) {
+    if (!mgr) {
+        errno = EINVAL;
+        return ID_MANAGER_ERR;
+    }
 
     // Free nodes holding ready-to-reuse IDs
     id_node_t *curr = mgr->recycled_ids;
@@ -78,6 +86,7 @@ void idm_destroy(id_manager_t *mgr) {
     }
 
     free(mgr);
+    return ID_MANAGER_OK;
 }
 
 /**
@@ -87,10 +96,15 @@ void idm_destroy(id_manager_t *mgr) {
  * the memory node is NOT freed. Instead, it is moved to the `node_pool`
  * for future use. If no recycled IDs exist, a new one is generated.
  * * @param mgr Pointer to the ID manager.
- * @return The acquired 32-bit ID, or UINT32_MAX if no more IDs are available or mgr is NULL.
+ * @return The acquired 32-bit ID, or UINT32_MAX on error (sets errno = EINVAL
+ * when mgr is NULL, or ENOSPC when the ID space is exhausted). UINT32_MAX is
+ * also the last valid ID; set errno to 0 before the call to tell the two apart.
  */
 uint32_t idm_assign_id(id_manager_t *mgr) {
-    if (!mgr) return UINT32_MAX;
+    if (!mgr) {
+        errno = EINVAL;
+        return UINT32_MAX;
+    }
 
     // 1. Try to take an ID from the recycled stack
     if (mgr->recycled_ids) {
@@ -108,6 +122,7 @@ uint32_t idm_assign_id(id_manager_t *mgr) {
 
     // 2. Fallback: Generate a new ID from the counter
     if (mgr->exhausted) {
+        errno = ENOSPC;
         return UINT32_MAX;
     }
 
@@ -130,14 +145,19 @@ uint32_t idm_assign_id(id_manager_t *mgr) {
  * It only calls `malloc` if the pool is entirely empty.
  * * @param mgr Pointer to the ID manager.
  * @param id The ID to release.
- * @return ID_MANAGER_OK on success, or ID_MANAGER_ERR if memory allocation fails.
+ * @return ID_MANAGER_OK on success, or ID_MANAGER_ERR (sets errno) if mgr is
+ * NULL or id is invalid (EINVAL), or if memory allocation fails (ENOMEM).
  */
 int idm_release_id(id_manager_t *mgr, uint32_t id) {
-    if (!mgr) return ID_MANAGER_ERR;
+    if (!mgr) {
+        errno = EINVAL;
+        return ID_MANAGER_ERR;
+    }
 
     if (id < mgr->min_id) {
-        perror("release_id lower than min_id");
-        return ID_MANAGER_OK; // Ignore invalid ID, prevent crash
+        /* An ID this manager could never have issued */
+        errno = EINVAL;
+        return ID_MANAGER_ERR;
     }
 
     // Optimization: if releasing the very last generated ID, just step back
@@ -156,7 +176,10 @@ int idm_release_id(id_manager_t *mgr, uint32_t id) {
     // 2. Fallback: if the pool is empty, allocate a new node
     else {
         new_node = malloc(sizeof(id_node_t));
-        if (!new_node) return ID_MANAGER_ERR;
+        if (!new_node) {
+            errno = ENOMEM;
+            return ID_MANAGER_ERR;
+        }
     }
 
     // Push the released ID onto the active recycled_ids stack
@@ -170,8 +193,13 @@ int idm_release_id(id_manager_t *mgr, uint32_t id) {
 /**
  * @brief Checks if there are any IDs currently available.
  * @param mgr Pointer to the ID manager.
- * @return true if an ID can be acquired, false otherwise.
+ * @return 1 if an ID can be acquired, 0 otherwise
+ * (sets errno = EINVAL when mgr is NULL).
  */
-inline int idm_is_available(id_manager_t *mgr) {
-    return mgr && (mgr->recycled_ids != NULL || !mgr->exhausted);
+int idm_is_available(id_manager_t *mgr) {
+    if (!mgr) {
+        errno = EINVAL;
+        return 0;
+    }
+    return (mgr->recycled_ids != NULL || !mgr->exhausted) ? 1 : 0;
 }
