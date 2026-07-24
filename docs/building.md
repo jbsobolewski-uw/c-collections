@@ -7,6 +7,30 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```
 
+## Running the tests
+
+Each module has a test binary in `test/` (see `test/CMakeLists.txt`); every
+test case is registered with CTest as `<module>.<case>`:
+
+```bash
+ctest --test-dir build --output-on-failure          # everything
+ctest --test-dir build -R '^list\.'                 # one module
+ctest --test-dir build -R '\.memory$'               # all memory tests
+```
+
+The same suite can be driven through Python's unittest:
+
+```bash
+python3 test/run_tests.py --build-dir build
+```
+
+Memory tests intercept the allocator via linker `--wrap` (see
+`test/memory_tests.c`) and systematically fail every allocation site in
+turn, asserting graceful failure and leak-freedom. In CLion, use the
+CTest run configuration ("All Tests", or auto-generated "All CTest") to
+run the suite. CI runs the full suite on every push to main and every
+pull request (`.github/workflows/tests.yml`).
+
 ## Targets
 
 Every module produces **both** a static and a shared library from a single

@@ -93,9 +93,10 @@ each returns `NULL` for a `NULL` input.
 - **Node recycling:** removed nodes are pooled (the `left` pointer doubles as
   the pool's "next" link) and reused by later insertions; `bst_destroy`
   releases the pool.
-- During a two-child removal the destructor is temporarily disabled while the
-  successor node is unlinked, so the data that was just moved into the target
-  node is not destroyed with it.
+- During a two-child removal the in-order successor node is unlinked
+  structurally (by node, not by key), so duplicate keys on the path to the
+  successor cannot be confused with it, and the destructor runs exactly once
+  for the removed element's data.
 
 ## Example
 

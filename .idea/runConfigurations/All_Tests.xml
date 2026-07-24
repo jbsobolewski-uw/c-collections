@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All Tests" type="CMakeTestRunConfigurationType" factoryName="CTest" PROGRAM_PARAMS="" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="C-COLLECTIONS" TARGET_NAME="All CTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="C-COLLECTIONS" RUN_TARGET_NAME="All CTest">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>
