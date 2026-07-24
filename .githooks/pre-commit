@@ -1,0 +1,23 @@
+#!/bin/sh
+# Pre-commit check: the commit is blocked unless the project builds and the
+# full test suite passes.
+#
+# Enable once per clone with:
+#   git config core.hooksPath .githooks
+#
+# The build directory can be overridden with PRE_COMMIT_BUILD_DIR.
+set -e
+
+if ! command -v cmake >/dev/null 2>&1; then
+    echo "pre-commit: cmake not found on PATH; skipping build-and-test check" >&2
+    exit 0
+fi
+
+BUILD_DIR="${PRE_COMMIT_BUILD_DIR:-build}"
+
+echo "pre-commit: configuring and building (${BUILD_DIR})" >&2
+cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Debug >/dev/null
+cmake --build "$BUILD_DIR" --parallel >/dev/null
+
+echo "pre-commit: running the test suite" >&2
+ctest --test-dir "$BUILD_DIR" --output-on-failure

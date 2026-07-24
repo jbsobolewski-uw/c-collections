@@ -71,3 +71,14 @@ gcc app.c -Ipath/to/c-collections -Lpath/to/build/src -lcollectionslib -o app
 
 For Debug builds of the library, the consuming binary must be linked with
 `-fsanitize=undefined` as well.
+
+## Pre-commit check
+
+A versioned git hook in `.githooks/pre-commit` builds the project and runs
+the test suite before every commit. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Bypass it in an emergency with `git commit --no-verify`.
